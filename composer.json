@@ -1,0 +1,25 @@
+{
+	"name": "xchert/file-reader",
+	"description": "Simple utils to work with most common files",
+	"keywords": [
+		"file"
+	],
+	"authors": [
+		{
+			"name": "Dustin Simon"
+		}
+	],
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {
+			"Xchert\\FileReader\\": "src/"
+		}
+	},
+	"require": {
+		"php": "^8.3",
+		"xchert/util": "v1.0.0-RC1",
+		"xchert/exception": "v1.0.0-RC1",
+		"symfony/serializer": "~7.0 || ~8.0",
+		"ext-iconv": "*"
+	}
+}
