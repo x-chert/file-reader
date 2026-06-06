@@ -1,8 +1,10 @@
 {
 	"name": "xchert/file-reader",
+	"type": "library",
 	"description": "Simple utils to work with most common files",
 	"keywords": [
-		"file"
+		"file",
+		"csv"
 	],
 	"authors": [
 		{
