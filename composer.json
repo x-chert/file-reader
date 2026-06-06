@@ -17,8 +17,8 @@
 	},
 	"require": {
 		"php": "^8.3",
-		"xchert/util": "v1.0.0-RC1",
-		"xchert/exception": "v1.0.0-RC1",
+		"xchert/util": "~1.0.0@RC",
+		"xchert/exception": "~1.0.0@RC",
 		"symfony/serializer": "~7.0 || ~8.0",
 		"ext-iconv": "*"
 	}
