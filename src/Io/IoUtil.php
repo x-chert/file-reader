@@ -1,12 +1,14 @@
 <?php
 
-namespace Xchert\FileReader;
+namespace Xchert\FileReader\Io;
 
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\InvalidCharsetException;
 
 class IoUtil
 {
+    public const string FILTER_BOM = 'filter_bom';
+
     public static function isValidEncoding(string $encoding): bool
     {
         if($encoding === '') {
@@ -41,6 +43,10 @@ class IoUtil
 
         if(!static::isValidEncoding($fromEncoding)) {
             throw new InvalidCharsetException($fromEncoding);
+        }
+
+        if(\strtolower($fromEncoding) === 'utf-8') {
+            \stream_filter_append($stream, 'bom_filter', \STREAM_FILTER_READ);
         }
 
         if(\strtolower($fromEncoding) === \strtolower($toEncoding)) {

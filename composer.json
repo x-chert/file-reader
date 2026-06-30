@@ -15,7 +15,10 @@
 	"autoload": {
 		"psr-4": {
 			"Xchert\\FileReader\\": "src/"
-		}
+		},
+		"files": [
+			"src/Io/register_stream_filters.php"
+		]
 	},
 	"require": {
 		"php": "^8.3",

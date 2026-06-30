@@ -6,7 +6,7 @@ use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\ReadError;
 use Xchert\FileReader\FileIterator;
-use Xchert\FileReader\IoUtil;
+use Xchert\FileReader\Io\IoUtil;
 use Xchert\Util\Value;
 
 class CsvIterator extends FileIterator
