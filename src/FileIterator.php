@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xchert\FileReader;
 
 use Xchert\FileReader\Charset\CharsetOptions;
@@ -19,7 +21,7 @@ abstract class FileIterator
 
     protected function isFileReadable(string $file): bool
     {
-        if(!\file_exists($file) || !\is_file($file)) {
+        if (!\file_exists($file) || !\is_file($file)) {
             return false;
         }
 

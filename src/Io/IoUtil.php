@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xchert\FileReader\Io;
 
 use Xchert\FileReader\Charset\CharsetOptions;
@@ -11,13 +13,13 @@ class IoUtil
 
     public static function isValidEncoding(string $encoding): bool
     {
-        if($encoding === '') {
+        if ($encoding === '') {
             return false;
         }
 
         $encodings = \array_map('strtolower', \mb_list_encodings());
 
-        if(\in_array(\strtolower($encoding), $encodings, true)) {
+        if (\in_array(\strtolower($encoding), $encodings, true)) {
             return true;
         }
 
@@ -31,31 +33,31 @@ class IoUtil
     /** @param resource $stream */
     public static function appendCharacterSetFilter($stream, CharsetOptions $options, string $toEncoding = 'UTF-8'): void
     {
-        if(!\is_resource($stream)) {
+        if (!\is_resource($stream)) {
             throw new \InvalidArgumentException(\sprintf('Stream must be resource. %s given', \get_debug_type($stream)));
         }
 
-        if(!static::isValidEncoding($toEncoding)) {
+        if (!static::isValidEncoding($toEncoding)) {
             throw new InvalidCharsetException($toEncoding);
         }
 
         $fromEncoding = $options->getEncoding();
 
-        if(!static::isValidEncoding($fromEncoding)) {
+        if (!static::isValidEncoding($fromEncoding)) {
             throw new InvalidCharsetException($fromEncoding);
         }
 
-        if(\strtolower($fromEncoding) === 'utf-8') {
+        if (\strtolower($fromEncoding) === 'utf-8') {
             \stream_filter_append($stream, 'bom_filter', \STREAM_FILTER_READ);
         }
 
-        if(\strtolower($fromEncoding) === \strtolower($toEncoding)) {
+        if (\strtolower($fromEncoding) === \strtolower($toEncoding)) {
             return;
         }
 
         $modifier = $options->getBehavior()->getModifier();
 
-        if($modifier !== null) {
+        if ($modifier !== null) {
             $toEncoding .= '//'.$modifier;
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xchert\FileReader\Csv;
 
 enum HeaderBehavior: string
