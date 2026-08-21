@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xchert\FileReader\Csv;
 
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
@@ -22,13 +24,13 @@ class CsvIterator extends FileIterator
 
     public function iterateFile(string $file, ?int $offset = null, ?int $limit = null): \Generator
     {
-        if(!$this->isFileReadable($file)) {
+        if (!$this->isFileReadable($file)) {
             throw new ReadError($file);
         }
 
         $stream = @\fopen($file, 'r');
 
-        if($stream === false) {
+        if ($stream === false) {
             throw new ReadError($file);
         }
 
@@ -51,15 +53,15 @@ class CsvIterator extends FileIterator
     /** @var resource $stream */
     public function iterateStream($stream, ?int $offset = null, ?int $limit = null): \Generator
     {
-        if(!\is_resource($stream)) {
+        if (!\is_resource($stream)) {
             throw new \InvalidArgumentException(\sprintf('Stream must be a resource. %s given', \get_debug_type($stream)));
         }
 
-        if($limit !== null && $limit <= 0) {
+        if ($limit !== null && $limit <= 0) {
             throw new \InvalidArgumentException('Limit must be greater than 0');
         }
 
-        if($offset !== null && $offset < 0) {
+        if ($offset !== null && $offset < 0) {
             throw new \InvalidArgumentException('Offset must be greater than or equal to 0');
         }
 
@@ -70,38 +72,38 @@ class CsvIterator extends FileIterator
         $iteration = 0;
         $headerBehavior = $this->csvOptions->getHeaderBehavior();
 
-        if($headerBehavior->hasHeader()) {
+        if ($headerBehavior->hasHeader()) {
             // Read first line of file for header
             $header = $this->readCsv($stream);
 
             // Stream is empty
-            if($header === null || $this->isEmpty($header)) {
+            if ($header === null || $this->isEmpty($header)) {
                 return;
             }
 
             // Ignore header if it's not in use
-            if(!$headerBehavior->isUsingHeader()) {
+            if (!$headerBehavior->isUsingHeader()) {
                 $header = null;
             }
         }
 
-        while(($record = $this->readCsv($stream)) !== null) {
-            if($this->csvOptions->hasFlags(self::SKIP_EMPTY) && $this->isEmpty($record)) {
+        while (($record = $this->readCsv($stream)) !== null) {
+            if ($this->csvOptions->hasFlags(self::SKIP_EMPTY) && $this->isEmpty($record)) {
                 continue;
             }
 
-            if($offset !== null && $iteration < $offset) {
+            if ($offset !== null && $iteration < $offset) {
                 $iteration++;
                 continue;
             }
 
             $iteration++;
 
-            if(!$headerBehavior->isUsingHeader()) {
+            if (!$headerBehavior->isUsingHeader()) {
                 $fetched++;
                 yield $record;
 
-                if($fetched === $limit) {
+                if ($fetched === $limit) {
                     return;
                 }
 
@@ -112,7 +114,7 @@ class CsvIterator extends FileIterator
             yield $this->buildRecord($header, $record);
             $fetched++;
 
-            if($fetched === $limit) {
+            if ($fetched === $limit) {
                 return;
             }
         }
@@ -123,7 +125,7 @@ class CsvIterator extends FileIterator
      */
     protected function readCsv($stream): ?array
     {
-        if(!\is_resource($stream)) {
+        if (!\is_resource($stream)) {
             return null;
         }
 
@@ -132,8 +134,8 @@ class CsvIterator extends FileIterator
 
     protected function isEmpty(array $data): bool
     {
-        foreach($data as $value) {
-            if(!Value::isEmpty($value, false)) {
+        foreach ($data as $value) {
+            if (!Value::isEmpty($value, false)) {
                 return false;
             }
         }
@@ -155,9 +157,9 @@ class CsvIterator extends FileIterator
         $headerCount = \count($header);
         $dataCount = \count($data);
 
-        if($headerCount > $dataCount) {
+        if ($headerCount > $dataCount) {
             $data = static::append($data, $headerCount - $dataCount, '');
-        } elseif($dataCount > $headerCount) {
+        } elseif ($dataCount > $headerCount) {
             $data = \array_slice($data, 0, $headerCount);
         }
 
@@ -182,7 +184,7 @@ class CsvIterator extends FileIterator
 
         $result = $decoder->decode($content, CsvEncoder::FORMAT);
 
-        if(!\is_array($result)) {
+        if (!\is_array($result)) {
             throw new \RuntimeException('Data could not be re-decoded correctly.');
         }
 
@@ -191,7 +193,7 @@ class CsvIterator extends FileIterator
 
     protected function append(array $array, int $count, mixed $value): array
     {
-        for($i = 1; $i <= $count; $i++) {
+        for ($i = 1; $i <= $count; $i++) {
             $array[] = $value;
         }
 

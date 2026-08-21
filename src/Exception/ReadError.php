@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Xchert\FileReader\Exception;
 
 use Xchert\Exception\ErrorException;
@@ -14,7 +16,7 @@ class ReadError extends ErrorException
             'resourceName' => $resourceName,
         ];
 
-        if($reason !== null) {
+        if ($reason !== null) {
             $params['reason'] = $reason;
         }
 
