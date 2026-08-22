@@ -6,6 +6,7 @@ namespace Xchert\FileReader\Csv;
 
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Xchert\FileReader\Charset\CharsetOptions;
+use Xchert\FileReader\Exception\CharsetConversionException;
 use Xchert\FileReader\Exception\ReadError;
 use Xchert\FileReader\FileIterator;
 use Xchert\FileReader\Io\IoUtil;
@@ -122,6 +123,8 @@ class CsvIterator extends FileIterator
 
     /**
      * @param resource $stream
+     *
+     * @throws CharsetConversionException
      */
     protected function readCsv($stream): ?array
     {
@@ -129,7 +132,23 @@ class CsvIterator extends FileIterator
             return null;
         }
 
-        return \fgetcsv($stream, null, $this->csvOptions->getDelimiter(), $this->csvOptions->getEnclosure(), $this->csvOptions->getEscape()) ?: null;
+        \set_error_handler(
+            function (int $severity, string $message) {
+                if ($severity === \E_WARNING && \str_contains($message, 'iconv')) {
+                    throw new CharsetConversionException($message);
+                }
+
+                return false;
+            }
+        );
+
+        try {
+            $data = \fgetcsv($stream, null, $this->csvOptions->getDelimiter(), $this->csvOptions->getEnclosure(), $this->csvOptions->getEscape()) ?: null;
+        } finally {
+            \restore_error_handler();
+        }
+
+        return $data;
     }
 
     protected function isEmpty(array $data): bool
