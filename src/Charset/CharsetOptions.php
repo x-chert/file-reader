@@ -11,21 +11,33 @@ class CharsetOptions extends Pod
 {
     use FlagTrait;
 
+    /** @var CharsetModifier[] */
+    private array $modifiers = [];
+
+    /** @param CharsetModifier[] $modifiers */
     public function __construct(
         protected string $encoding = 'UTF-8',
-        protected CharsetBehavior $behavior = CharsetBehavior::Error,
+        array $modifiers = [],
         string ...$flags
     ) {
+        foreach ($modifiers as $index => $modifier) {
+            if (!$modifier instanceof CharsetModifier) {
+                throw new \InvalidArgumentException(\sprintf('Modifier #%d must be instance of %s', $index, CharsetModifier::class));
+            }
+        }
+
+        $this->modifiers = $modifiers;
         $this->setFlags(...$flags);
+    }
+
+    /** @return CharsetModifier[] */
+    public function getModifiers(): array
+    {
+        return $this->modifiers;
     }
 
     public function getEncoding(): string
     {
         return $this->encoding;
-    }
-
-    public function getBehavior(): CharsetBehavior
-    {
-        return $this->behavior;
     }
 }

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Io;
 
+use Xchert\FileReader\Charset\CharsetModifier;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\InvalidCharsetException;
 
 class IoUtil
 {
-    public const string FILTER_BOM = 'filter_bom';
-
     public static function isValidEncoding(string $encoding): bool
     {
         if ($encoding === '') {
@@ -55,10 +54,9 @@ class IoUtil
             return;
         }
 
-        $modifier = $options->getBehavior()->getModifier();
-
-        if ($modifier !== null) {
-            $toEncoding .= '//'.$modifier;
+        /** @var CharsetModifier $modifier */
+        foreach ($options->getModifiers() as $modifier) {
+            $toEncoding .= '//'.$modifier->value;
         }
 
         $filterName = \sprintf('convert.iconv.%s/%s', $fromEncoding, $toEncoding);

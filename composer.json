@@ -18,6 +18,9 @@
 		},
 		"files": [
 			"src/Io/register_stream_filters.php"
+		],
+		"exclude-from-classmap": [
+			"src/Test/"
 		]
 	},
 	"require": {
@@ -25,5 +28,8 @@
 		"xchert/util": "~1.0.0@RC",
 		"symfony/serializer": "~7.0 || ~8.0",
 		"ext-iconv": "*"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^13.3"
 	}
 }
