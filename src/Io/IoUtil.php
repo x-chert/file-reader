@@ -50,10 +50,6 @@ class IoUtil
             \stream_filter_append($stream, 'bom_filter', \STREAM_FILTER_READ);
         }
 
-        if (\strtolower($fromEncoding) === \strtolower($toEncoding)) {
-            return;
-        }
-
         /** @var CharsetModifier $modifier */
         foreach ($options->getModifiers() as $modifier) {
             $toEncoding .= '//'.$modifier->value;
