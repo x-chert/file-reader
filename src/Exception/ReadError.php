@@ -4,30 +4,15 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Exception;
 
-use Xchert\Exception\ErrorException;
-
-class ReadError extends ErrorException
+class ReadError extends \Exception
 {
-    public const string ERROR_CODE = 'XCHERT_FILE_READER__READ_ERROR';
-
-    public function __construct(string $resourceName, ?string $reason = null)
+    public function __construct(private readonly string $resourceName)
     {
-        $params = [
-            'resourceName' => $resourceName,
-        ];
-
-        if ($reason !== null) {
-            $params['reason'] = $reason;
-        }
-
-        parent::__construct(
-            'Resource {{ resourceName }} is not readable.',
-            $params
-        );
+        parent::__construct(\sprintf('%s is not readable', $resourceName));
     }
 
-    public function getErrorCode(): string
+    public function getResourceName(): string
     {
-        return self::ERROR_CODE;
+        return $this->resourceName;
     }
 }
