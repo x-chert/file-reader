@@ -4,29 +4,15 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Exception;
 
-use Symfony\Component\HttpFoundation\Response;
-use Xchert\Exception\ErrorException;
-
-class InvalidCharsetException extends ErrorException
+class InvalidCharsetException extends \Exception
 {
-    public const string ERROR_CODE = 'XCHERT_FILE_READER__INVALID_CHARSET';
-
-    public function __construct(string $charset, ?string $source = null)
+    public function __construct(private readonly string $charset)
     {
-        parent::__construct(
-            '{{ charset }} is not a valid charset.',
-            ['charset' => $charset],
-            $source ?? 'unknown'
-        );
+        parent::__construct(\sprintf('%s is not a valid charset', $charset));
     }
 
-    public function getErrorCode(): string
+    public function getCharset(): string
     {
-        return self::ERROR_CODE;
-    }
-
-    public function getStatusCode(): int
-    {
-        return Response::HTTP_BAD_REQUEST;
+        return $this->charset;
     }
 }
