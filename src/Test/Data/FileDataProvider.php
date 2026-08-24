@@ -11,6 +11,16 @@ class FileDataProvider
         return static::readFile(__DIR__.'/csviterator_file.php');
     }
 
+    public static function csviterator_string(): iterable
+    {
+        return static::readFile(__DIR__.'/csviterator_string.php');
+    }
+
+    public static function csviterator_stream(): iterable
+    {
+        return static::readFile(__DIR__.'/csviterator_stream.php');
+    }
+
     public static function readFile(string $file): iterable
     {
         if (!\file_exists($file) || !\is_readable($file)) {

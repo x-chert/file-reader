@@ -16,7 +16,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber' => 'ABC-123',
@@ -46,7 +46,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::NestedHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber' => 'ABC-123',
@@ -82,7 +82,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::NoHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber',
@@ -117,7 +117,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::SkipHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'ABC-123',
@@ -147,7 +147,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions('ISO-8859-1'),
-            'file' => __DIR__.'/products_iso88591.csv',
+            'data' => file_get_contents(__DIR__.'/products_iso88591.csv'),
             'expected' => [
                 [
                     'productNumber' => 'ÄÖÜ-123',
@@ -172,7 +172,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8_bom.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8_bom.csv'),
             'expected' => [
                 [
                     'productNumber' => 'ABC-123',
@@ -197,7 +197,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber' => 'DEF-456',
@@ -222,7 +222,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber' => 'ABC-123',
@@ -247,7 +247,7 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::FlatHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'file' => __DIR__.'/products_utf8.csv',
+            'data' => file_get_contents(__DIR__.'/products_utf8.csv'),
             'expected' => [
                 [
                     'productNumber' => 'DEF-456',
