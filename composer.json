@@ -32,9 +32,12 @@
 	},
 	"require": {
 		"php": "^8.4",
+		"ext-iconv": "*",
+		"ext-xmlreader": "*",
+		"ext-simplexml": "*",
+		"ext-mbstring": "*",
 		"xchert/util": "~1.0",
-		"symfony/serializer": "~7.0 || ~8.0",
-		"ext-iconv": "*"
+		"symfony/serializer": "~7.0 || ~8.0"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^13.3"

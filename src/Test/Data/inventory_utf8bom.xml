@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<inventory>
+	<products>
+		<product>
+			<id>101</id>
+			<name>Gaming Mouse</name>
+			<price>49.99</price>
+			<categories>
+				<category>56</category>
+				<category>65</category>
+			</categories>
+		</product>
+		<product>
+			<id>102</id>
+			<name>Mechanical keyboard</name>
+			<price>119.99</price>
+			<categories>
+				<category>56</category>
+			</categories>
+		</product>
+		<product>
+			<id>103</id>
+			<name>Monitor</name>
+			<price>219.99</price>
+		</product>
+	</products>
+</inventory>
