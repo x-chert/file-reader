@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory>
+	<products>
+		<product>
+			<id>101</id>
+			<name>Gaming Mouse</name>
+			<price>49.99</price>
+			<categories>
+				<category>56</category>
+				<category>65</category>
+			</categories>
+		</product>
+	</products>
+</inventory>

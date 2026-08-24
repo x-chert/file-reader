@@ -17,7 +17,7 @@ class CsvIterator extends FileIterator
     public const string SKIP_EMPTY = 'skip_empty';
 
     public function __construct(
-        protected CsvOptions $csvOptions,
+        protected readonly CsvOptions $csvOptions,
         CharsetOptions $charsetOptions = new CharsetOptions()
     ) {
         parent::__construct($charsetOptions);
@@ -58,14 +58,7 @@ class CsvIterator extends FileIterator
             throw new \InvalidArgumentException(\sprintf('Stream must be a resource. %s given', \get_debug_type($stream)));
         }
 
-        if ($limit !== null && $limit <= 0) {
-            throw new \InvalidArgumentException('Limit must be greater than 0');
-        }
-
-        if ($offset !== null && $offset < 0) {
-            throw new \InvalidArgumentException('Offset must be greater than or equal to 0');
-        }
-
+        $this->validateOffsetLimit($offset, $limit);
         IoUtil::appendCharacterSetFilter($stream, $this->charsetOptions);
 
         $header = null;

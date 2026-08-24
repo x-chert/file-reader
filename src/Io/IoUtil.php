@@ -29,7 +29,9 @@ class IoUtil
         return $result !== false;
     }
 
-    /** @param resource $stream */
+    /** @param resource $stream
+     * @throws InvalidCharsetException
+     */
     public static function appendCharacterSetFilter($stream, CharsetOptions $options, string $toEncoding = 'UTF-8'): void
     {
         if (!\is_resource($stream)) {
@@ -50,13 +52,18 @@ class IoUtil
             \stream_filter_append($stream, 'bom_filter', \STREAM_FILTER_READ);
         }
 
-        /** @var CharsetModifier $modifier */
-        foreach ($options->getModifiers() as $modifier) {
-            $toEncoding .= '//'.$modifier->value;
-        }
-
+        $toEncoding = static::createIconvEncoding($toEncoding, ...$options->getModifiers());
         $filterName = \sprintf('convert.iconv.%s/%s', $fromEncoding, $toEncoding);
 
         \stream_filter_append($stream, $filterName, \STREAM_FILTER_READ);
+    }
+
+    public static function createIconvEncoding(string $encoding, CharsetModifier ...$modifiers): string
+    {
+        foreach ($modifiers as $modifier) {
+            $encoding .= '//'.$modifier->value;
+        }
+
+        return $encoding;
     }
 }

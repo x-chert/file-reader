@@ -21,6 +21,21 @@ class FileDataProvider
         return static::readFile(__DIR__.'/csviterator_stream.php');
     }
 
+    public static function xmliterator_file(): iterable
+    {
+        return static::readFile(__DIR__.'/xmliterator_file.php');
+    }
+
+    public static function xmliterator_string(): iterable
+    {
+        return static::readFile(__DIR__.'/xmliterator_string.php');
+    }
+
+    public static function xmliterator_stream(): iterable
+    {
+        return static::readFile(__DIR__.'/xmliterator_stream.php');
+    }
+
     public static function readFile(string $file): iterable
     {
         if (!\file_exists($file) || !\is_readable($file)) {

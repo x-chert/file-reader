@@ -28,4 +28,14 @@ abstract class FileIterator
         return \is_readable($file);
     }
 
+    protected function validateOffsetLimit(?int $offset, ?int $limit): void
+    {
+        if ($limit !== null && $limit <= 0) {
+            throw new \InvalidArgumentException('Limit must be greater than 0');
+        }
+
+        if ($offset !== null && $offset < 0) {
+            throw new \InvalidArgumentException('Offset must be greater than or equal to 0');
+        }
+    }
 }
