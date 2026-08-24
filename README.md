@@ -21,73 +21,53 @@ composer require xchert/file-reader
 
 ## Basic Usage
 
-### 1. Simple CSV File Iteration (With Flat Headers)
-
-By default, `CsvOptions` uses standard `;` separation and flat header mapping, returning associative arrays where the
-keys are derived from the header line.
+### Read CSV data
 
 ```php
 <?php
 
 use Xchert\FileReader\Csv\CsvIterator;
 use Xchert\FileReader\Csv\CsvOptions;
+use Xchert\FileReader\Charset\CharsetOptions;
 
-$csvOptions = new CsvOptions(); // Default delimiter ';', flat header enabled
-$iterator = new CsvIterator($csvOptions);
-
-// Iterate line by line
-foreach ($iterator->iterateFile('path/to/data.csv') as $row) {
-    // $row is an associative array: ['name' => 'John', 'email' => 'john@example.com']
-    print_r($row);
-}
-```
-
-### 2. Iterating with Offset and Limit (Pagination)
-
-You can skip a specified number of records or limit the total number of records returned.
-
-```php
-<?php
-
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
-
-$iterator = new CsvIterator(new CsvOptions());
-
-$offset = 10; // Skip first 10 data rows
-$limit = 50;  // Read next 50 data rows
-
-foreach ($iterator->iterateFile('path/to/data.csv', $offset, $limit) as $row) {
-    // Process paginated row
-}
-```
-
-### 3. Custom Delimiters and Header Behaviors
-
-You can customize the delimiter, enclosure, escape characters, and how headers are treated using `HeaderBehavior`.
-
-```php
-<?php
-
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
-use Xchert\FileReader\Csv\HeaderBehavior;
-
-$csvOptions = new CsvOptions(
-    delimiter: ',',
-    enclosure: '"',
-    escape: '\\',
-    headerBehavior: HeaderBehavior::NoHeader // Header lines treated as normal data
+$iterator = new CsvIterator(
+  csvOptions: new CsvOptions(
+      delimiter: ';',                               // default
+      enclosure: '"',                               // default
+      escape: '\\',                                 // default
+      headerBehavior: HeaderBehavior::FlatHeader,   // default
+      flags: [CsvIterator::SKIP_EMPTY]              // optional; SKIP_EMPTY flag causes automatic filtering of empty lines
+  ),
+  charsetOptions: new CharsetOptions(               // optional; encoding of the csv data, defaults to UTF-8
+      encoding: 'UTF-8'
+  )
 );
 
-$iterator = new CsvIterator($csvOptions);
+// Offset and limit are always optional
+$offset = 5;
+$limit = 10;
 
-foreach ($iterator->iterateFile('path/to/data.csv') as $row) {
-    // $row is an indexed array: [0 => 'Value 1', 1 => 'Value 2']
+// Iterate a file
+foreach ($iterator->iterateFile('path/to/data.csv', $offset, $limit) as $row) {
+    // Do something
+}
+
+// Iterate a string
+foreach ($iterator->iterateString($someCsvData, $offset, $limit) as $row) {
+    // Do something
+}
+
+// Iterate a stream resource
+foreach ($iterator->iterateStream($aStreamResource, $offset, $limit) as $row) {
+    // Do something
 }
 ```
 
-Available `HeaderBehavior` options:
+> The CsvIterator converts all data to UTF-8.
+
+**Header behavior**
+
+There are severeal options to handle csv headers:
 
 - `HeaderBehavior::FlatHeader` *(default)*: Maps header row keys to each record row into a single-level associative
   array.
@@ -96,87 +76,42 @@ Available `HeaderBehavior` options:
 - `HeaderBehavior::SkipHeader`: Skips the first header row and returns indexed arrays for subsequent rows.
 - `HeaderBehavior::NoHeader`: Treats all lines, including the first line, as data rows.
 
-### 4. Handling Character Encodings (e.g., ISO-8859-1 to UTF-8)
+### Read XML data
 
-Configure `CharsetOptions` to transparently convert streams from legacy encodings to UTF-8 or any specified output
-encoding.
+The XmlIterator takes an array as path and reads all elements within this path.
 
 ```php
 <?php
 
+use Xchert\FileReader\Xml\XmlIterator;
 use Xchert\FileReader\Charset\CharsetOptions;
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
 
-$charsetOptions = new CharsetOptions(
-    encoding: 'UTF-8'
+
+$iterator = new XmlIterator(
+  path: ['inventory', 'products']                   // required; takes an array of strings, can also be empty to read from the root element
+  charsetOptions: new CharsetOptions(               // optional; encoding of the csv data, defaults to UTF-8
+      encoding: 'UTF-8'
+  )
 );
 
-$csvOptions = new CsvOptions();
-$iterator = new CsvIterator($csvOptions, $charsetOptions);
+// Offset and limit are always optional
+$offset = 5;
+$limit = 10;
 
-foreach ($iterator->iterateFile('path/to/latin1_file.csv') as $row) {
-    // Content is converted to UTF-8 automatically during iteration
+// Iterate a file
+foreach ($iterator->iterateFile('path/to/data.xml', $offset, $limit) as $row) {
+    // Do something
+}
+
+// Iterate a string
+foreach ($iterator->iterateString($someXmlData, $offset, $limit) as $row) {
+    // Do something
+}
+
+// Iterate a stream resource
+foreach ($iterator->iterateStream($aStreamResource, $offset, $limit) as $row) {
+    // Do something
 }
 ```
 
-### 5. Iterating Raw Strings or Streams
-
-`CsvIterator` can process strings in memory or existing stream resources directly.
-
-#### Iterating Raw Strings
-
-```php
-<?php
-
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
-
-$csvData = "Name;Age\nAlice;30\nBob;25";
-
-$iterator = new CsvIterator(new CsvOptions());
-
-foreach ($iterator->iterateString($csvData) as $row) {
-    print_r($row);
-}
-```
-
-#### Iterating PHP Streams
-
-```php
-<?php
-
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
-
-$stream = fopen('https://example.com/data.csv', 'r');
-
-$iterator = new CsvIterator(new CsvOptions());
-
-foreach ($iterator->iterateStream($stream) as $row) {
-    print_r($row);
-}
-
-fclose($stream);
-```
-
-### 6. Skipping Empty Lines
-
-Pass the `CsvIterator::SKIP_EMPTY` flag in `CsvOptions` to automatically filter out blank lines during iteration.
-
-```php
-<?php
-
-use Xchert\FileReader\Csv\CsvIterator;
-use Xchert\FileReader\Csv\CsvOptions;
-
-$csvOptions = new CsvOptions(
-    flags: [CsvIterator::SKIP_EMPTY]
-);
-
-$iterator = new CsvIterator($csvOptions);
-
-foreach ($iterator->iterateFile('path/to/data.csv') as $row) {
-    // Empty rows are automatically skipped
-}
-```
+> The XmlIterator converts all data to UTF-8.
