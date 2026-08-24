@@ -1,17 +1,24 @@
 {
 	"name": "xchert/file-reader",
+	"description": "A memory-efficient PHP library for streaming and iterating files with built-in charset conversion",
 	"type": "library",
-	"description": "Simple utils to work with most common files",
 	"keywords": [
-		"file",
-		"csv"
+		"csv",
+		"file-reader",
+		"file-iterator",
+		"charset-conversion",
+		"encoding"
 	],
+	"license": "MIT",
 	"authors": [
 		{
 			"name": "Dustin Simon"
 		}
 	],
-	"license": "MIT",
+	"support": {
+		"issues": "https://github.com/x-chert/file-reader/issues",
+		"source": "https://github.com/x-chert/file-reader"
+	},
 	"autoload": {
 		"psr-4": {
 			"Xchert\\FileReader\\": "src/"
@@ -24,8 +31,8 @@
 		]
 	},
 	"require": {
-		"php": "^8.3",
-		"xchert/util": "~1.0.0@RC",
+		"php": "^8.4",
+		"xchert/util": "~1.0",
 		"symfony/serializer": "~7.0 || ~8.0",
 		"ext-iconv": "*"
 	},
