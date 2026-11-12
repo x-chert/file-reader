@@ -403,5 +403,23 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => InvalidArgumentException::class
         ],
+        'InvalidLimit' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'file' => __DIR__.'/inventory_utf8.xml',
+            'expected' => null,
+            'offset' => null,
+            'limit' => 0,
+            'expectedException' => InvalidArgumentException::class
+        ],
+        'InvalidOffset' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'file' => __DIR__.'/inventory_utf8.xml',
+            'expected' => null,
+            'offset' => -5,
+            'limit' => null,
+            'expectedException' => InvalidArgumentException::class
+        ],
     ];
 })();

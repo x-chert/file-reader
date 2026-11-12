@@ -51,26 +51,10 @@ class XmlIterator extends FileIterator
         $stream = @\fopen('php://temp', 'w+');
         \fwrite($stream, $content);
         \rewind($stream);
-        $hasEncoding = $this->hasEncoding($stream);
+
+        yield from $this->iterateStream($stream, $offset, $limit);
+
         \fclose($stream);
-
-        if (!$hasEncoding) {
-            $encoding = $this->charsetOptions->getEncoding();
-
-            if (!IoUtil::isValidEncoding($encoding)) {
-                throw new InvalidCharsetException($encoding);
-            }
-
-            $content = \iconv(
-                $encoding,
-                IoUtil::createIconvEncoding('UTF-8', ...$this->charsetOptions->getModifiers()),
-                $content,
-            );
-        }
-
-        $reader = \XMLReader::fromString($content);
-
-        yield from $this->readXml($reader, $offset ?? 0, $limit);
     }
 
     /**
