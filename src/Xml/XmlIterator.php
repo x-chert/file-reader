@@ -92,13 +92,8 @@ class XmlIterator extends FileIterator
             IoUtil::appendCharacterSetFilter($stream, $this->charsetOptions);
         }
 
-        $uri = \stream_get_meta_data($stream)['uri'] ?? null;
-
-        if ($uri) {
-            $reader = \XMLReader::open($uri);
-        } else {
-            $reader = \XMLReader::fromStream($stream);
-        }
+        // Read from the stream itself (not its URI) so appended stream filters are applied
+        $reader = \XMLReader::fromStream($stream);
 
         yield from $this->readXml($reader, $offset, $limit);
 

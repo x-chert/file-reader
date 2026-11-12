@@ -135,6 +135,40 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => null
         ],
+        'NestedReadISO88591WithoutDeclaration' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions('ISO-8859-1'),
+            'data' => fopen(__DIR__.'/inventory_iso88591_no_declaration.xml', 'r'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gäming Maus',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanische Tastatür',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
         'NestedReadUTF-8-BOM' => [
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions(),
