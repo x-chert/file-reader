@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Xchert\FileReader\Charset\CharsetOptions;
+use Xchert\FileReader\Exception\XmlParseError;
 
 return (function (): Generator {
     yield from [
@@ -420,6 +421,15 @@ return (function (): Generator {
             'offset' => -5,
             'limit' => null,
             'expectedException' => InvalidArgumentException::class
+        ],
+        'MalformedXml' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'file' => __DIR__.'/inventory_malformed_utf8.xml',
+            'expected' => null,
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => XmlParseError::class
         ],
     ];
 })();

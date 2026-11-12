@@ -7,6 +7,7 @@ namespace Xchert\FileReader\Xml;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\InvalidCharsetException;
 use Xchert\FileReader\Exception\ReadError;
+use Xchert\FileReader\Exception\XmlParseError;
 use Xchert\FileReader\FileIterator;
 use Xchert\FileReader\Io\IoUtil;
 use Xchert\Util\Value;
@@ -24,6 +25,7 @@ class XmlIterator extends FileIterator
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      * @throws ReadError
      */
     public function iterateFile(string $file, ?int $offset = null, ?int $limit = null): \Generator
@@ -45,6 +47,7 @@ class XmlIterator extends FileIterator
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      */
     public function iterateString(string $content, ?int $offset = null, ?int $limit = null): \Generator
     {
@@ -59,6 +62,7 @@ class XmlIterator extends FileIterator
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      */
     public function iterateStream($stream, ?int $offset = null, ?int $limit = null): \Generator
     {
@@ -102,11 +106,11 @@ class XmlIterator extends FileIterator
         $targetDepth = \count($this->path);
         $iteration = 0;
         $fetched = 0;
-        $moved = $reader->read();
+        $moved = $this->guard($reader->read(...));
 
         while ($moved) {
             if ($reader->nodeType !== \XMLReader::ELEMENT) {
-                $moved = $reader->read();
+                $moved = $this->guard($reader->read(...));
                 continue;
             }
 
@@ -114,15 +118,15 @@ class XmlIterator extends FileIterator
 
             // Ancestor level: descend into a matching element, skip the subtree of a non-matching one
             if ($depth < $targetDepth) {
-                $moved = $reader->localName === $this->path[$depth] ? $reader->read() : $reader->next();
+                $moved = $this->guard($reader->localName === $this->path[$depth] ? $reader->read(...) : $reader->next(...));
                 continue;
             }
 
             if ($iteration >= $offset) {
-                $outerXml = $reader->readOuterXml();
+                $outerXml = $this->guard($reader->readOuterXml(...));
 
                 if (!empty($outerXml)) {
-                    $xmlElement = \simplexml_load_string($outerXml);
+                    $xmlElement = $this->guard(fn() => \simplexml_load_string($outerXml));
 
                     yield \json_decode(\json_encode($xmlElement), true);
                     $fetched++;
@@ -134,8 +138,37 @@ class XmlIterator extends FileIterator
             }
 
             $iteration++;
-            $moved = $reader->next();
+            $moved = $this->guard($reader->next(...));
         }
+    }
+
+    /**
+     * Runs a libxml operation and converts its errors into an exception instead of PHP warnings.
+     * Internal error handling is only enabled for the operation itself, so it does not leak into
+     * the caller's code between yields.
+     *
+     * @throws XmlParseError
+     */
+    private function guard(callable $operation): mixed
+    {
+        $useInternalErrors = \libxml_use_internal_errors(true);
+        \libxml_clear_errors();
+
+        try {
+            $result = $operation();
+            $errors = \libxml_get_errors();
+        } finally {
+            \libxml_clear_errors();
+            \libxml_use_internal_errors($useInternalErrors);
+        }
+
+        foreach ($errors as $error) {
+            if ($error->level >= \LIBXML_ERR_ERROR) {
+                throw new XmlParseError($error);
+            }
+        }
+
+        return $result;
     }
 
     private function validatePath(array $path): void

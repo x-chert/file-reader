@@ -35,6 +35,7 @@
 		"ext-iconv": "*",
 		"ext-xmlreader": "*",
 		"ext-simplexml": "*",
+		"ext-libxml": "*",
 		"ext-mbstring": "*",
 		"xchert/util": "~1.0",
 		"symfony/serializer": "~7.0 || ~8.0"
