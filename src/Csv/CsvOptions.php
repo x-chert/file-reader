@@ -13,7 +13,7 @@ class CsvOptions extends Pod
 
     public const string DEFAULT_DELIMITER = ';';
     public const string DEFAULT_ENCLOSURE = '"';
-    public const string DEFAULT_ESCAPE = '\\';
+    public const string DEFAULT_ESCAPE = '';
 
     public function __construct(
         protected string $delimiter = self::DEFAULT_DELIMITER,

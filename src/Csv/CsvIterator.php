@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Csv;
 
-use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\CharsetConversionException;
 use Xchert\FileReader\Exception\ReadError;
@@ -74,11 +73,13 @@ class CsvIterator extends FileIterator
         $headerBehavior = $this->csvOptions->getHeaderBehavior();
 
         if ($headerBehavior->hasHeader()) {
-            // Read first line of file for header
-            $header = $this->readCsv($stream);
+            // Read first non-empty line of file for header
+            do {
+                $header = $this->readCsv($stream);
+            } while ($header !== null && $this->isEmpty($header));
 
             // Stream is empty
-            if ($header === null || $this->isEmpty($header)) {
+            if ($header === null) {
                 return;
             }
 
@@ -89,6 +90,11 @@ class CsvIterator extends FileIterator
         }
 
         while (($record = $this->readCsv($stream)) !== null) {
+            // fgetcsv returns [null] for blank lines, which are no records
+            if ($record === [null]) {
+                continue;
+            }
+
             if ($this->csvOptions->hasFlags(self::SKIP_EMPTY) && $this->isEmpty($record)) {
                 continue;
             }
@@ -185,26 +191,33 @@ class CsvIterator extends FileIterator
         return \array_combine($header, $data);
     }
 
+    /**
+     * Builds nested arrays from dot-notation header keys, e.g. "price.amount"
+     */
     protected function buildNested(array $header, array $data): array
     {
-        $stream = \fopen('php://memory', 'w+');
-        \fputcsv($stream, $header, ';', '"', '');
-        \fputcsv($stream, $data, ';', '"', '');
-        \rewind($stream);
+        $result = [];
+        $count = \min(\count($header), \count($data));
 
-        $content = \stream_get_contents($stream);
-        \fclose($stream);
+        for ($i = 0; $i < $count; $i++) {
+            $keys = \explode('.', (string)$header[$i]);
+            $last = \array_key_last($keys);
+            $target = &$result;
 
-        $decoder = new CsvEncoder([
-            CsvEncoder::DELIMITER_KEY => ';',
-            CsvEncoder::ENCLOSURE_KEY => '"',
-            CsvEncoder::AS_COLLECTION_KEY => false
-        ]);
+            foreach ($keys as $index => $key) {
+                // Empty key segments are replaced by the column index
+                $key = $key === '' ? $i : $key;
 
-        $result = $decoder->decode($content, CsvEncoder::FORMAT);
+                if ($index === $last) {
+                    $target[$key] = $data[$i];
+                    break;
+                }
 
-        if (!\is_array($result)) {
-            throw new \RuntimeException('Data could not be re-decoded correctly.');
+                $target[$key] ??= [];
+                $target = &$target[$key];
+            }
+
+            unset($target);
         }
 
         return $result;

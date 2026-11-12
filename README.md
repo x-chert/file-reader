@@ -35,9 +35,9 @@ $iterator = new CsvIterator(
   csvOptions: new CsvOptions(
       delimiter: ';',                               // default
       enclosure: '"',                               // default
-      escape: '\\',                                 // default
+      escape: '',                                   // default; no escape character as in RFC 4180, quotes are escaped by doubling them
       headerBehavior: HeaderBehavior::FlatHeader,   // default
-      flags: [CsvIterator::SKIP_EMPTY]              // optional; SKIP_EMPTY flag causes automatic filtering of empty lines
+      flags: [CsvIterator::SKIP_EMPTY]              // optional; SKIP_EMPTY flag also skips rows with only empty values, e.g. ';;'
   ),
   charsetOptions: new CharsetOptions(               // optional; encoding of the csv data, defaults to UTF-8
       encoding: 'UTF-8'
@@ -73,10 +73,12 @@ There are severeal options to handle csv headers:
 
 - `HeaderBehavior::FlatHeader` *(default)*: Maps header row keys to each record row into a single-level associative
   array.
-- `HeaderBehavior::NestedHeader`: Parses dot-notation header keys into nested associative arrays (using Symfony's
-  CsvEncoder).
+- `HeaderBehavior::NestedHeader`: Parses dot-notation header keys into nested associative arrays, e.g. `price.amount`
+  becomes `['price' => ['amount' => …]]`.
 - `HeaderBehavior::SkipHeader`: Skips the first header row and returns indexed arrays for subsequent rows.
 - `HeaderBehavior::NoHeader`: Treats all lines, including the first line, as data rows.
+
+Blank lines are always skipped. The header is read from the first non-empty line.
 
 ### Read XML data
 
