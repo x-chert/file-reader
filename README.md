@@ -84,6 +84,7 @@ The XmlIterator takes an array as path and reads all elements within this path.
 <?php
 
 use Xchert\FileReader\Xml\XmlIterator;
+use Xchert\FileReader\Xml\XmlOptions;
 use Xchert\FileReader\Charset\CharsetOptions;
 
 
@@ -91,6 +92,10 @@ $iterator = new XmlIterator(
   path: ['inventory', 'products']                   // required; takes an array of strings, can also be empty to read from the root element
   charsetOptions: new CharsetOptions(               // optional; encoding of the csv data, defaults to UTF-8
       encoding: 'UTF-8'
+  ),
+  xmlOptions: new XmlOptions(                       // optional
+      ['g' => 'http://base.google.com/ns/1.0'],     // optional; namespace prefixes used in path and output
+      XmlOptions::STRIP_NAMESPACES                  // optional; flag to output names without namespace prefix
   )
 );
 
@@ -115,3 +120,70 @@ foreach ($iterator->iterateStream($aStreamResource, $offset, $limit) as $row) {
 ```
 
 > The XmlIterator converts all data to UTF-8.
+
+**Output format**
+
+Each element within the path is converted into an array, or into a string if it only contains text:
+
+- Attributes are prefixed with `@`, their values are always strings.
+- Child elements are keyed by their name, including a namespace prefix (e.g. `g:id`). Repeated elements become a list.
+- Text and CDATA content is returned as string, or as `#` if the element also has attributes or child elements.
+- Empty elements become an empty string. Comments and processing instructions are ignored.
+
+```xml
+<product id="101">
+    <name>Gaming Mouse</name>
+    <price currency="EUR">49.99</price>
+    <description><![CDATA[Fast & <b>precise</b>]]></description>
+    <stock/>
+    <categories>
+        <category>56</category>
+        <category>65</category>
+    </categories>
+</product>
+```
+
+```php
+[
+    '@id' => '101',
+    'name' => 'Gaming Mouse',
+    'price' => ['@currency' => 'EUR', '#' => '49.99'],
+    'description' => 'Fast & <b>precise</b>',
+    'stock' => '',
+    'categories' => ['category' => ['56', '65']],
+]
+```
+
+**Namespaces**
+
+Namespace prefixes are registered in `XmlOptions` and are independent of the prefixes used in the document:
+
+- Path segments with a prefix (e.g. `atom:entry`) only match elements of the registered namespace, also if the document
+  uses a different prefix or a default namespace. Path segments without prefix match the local name in any namespace.
+- Elements and attributes of registered namespaces use the registered prefix in the output. All other names are taken
+  from the document.
+
+```php
+// <rss xmlns:google="http://base.google.com/ns/1.0"><channel><item><google:id>1</google:id></item></channel></rss>
+$iterator = new XmlIterator(
+  path: ['rss', 'channel'],
+  xmlOptions: new XmlOptions(namespaces: ['g' => 'http://base.google.com/ns/1.0'])
+);
+
+// ['g:id' => '1']
+```
+
+To output all names without namespace prefix, set the `XmlOptions::STRIP_NAMESPACES` flag. Registered namespaces are
+still used to match the path.
+
+```php
+$iterator = new XmlIterator(
+  path: ['rss', 'channel'],
+  xmlOptions: new XmlOptions([], XmlOptions::STRIP_NAMESPACES)
+);
+
+// ['id' => '1']
+```
+
+> Elements with the same local name in different namespaces can no longer be distinguished and are merged into a list,
+> e.g. `<title>` and `<g:title>` become `'title' => ['…', '…']`.

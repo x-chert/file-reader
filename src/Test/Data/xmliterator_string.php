@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Xchert\FileReader\Charset\CharsetOptions;
+use Xchert\FileReader\Exception\XmlParseError;
+use Xchert\FileReader\Xml\XmlOptions;
 
 return (function (): Generator {
     yield from [
@@ -34,6 +36,98 @@ return (function (): Generator {
                     'id' => '103',
                     'name' => 'Monitor',
                     'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadMinified' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_minified_utf8.xml'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanical keyboard',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'XmlFeatures' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_xml_features_utf8.xml'),
+            'expected' => [
+                [
+                    '@id' => '101',
+                    '@active' => 'true',
+                    'g:id' => 'G-101',
+                    'name' => [
+                        '@xml:lang' => 'de',
+                        '#' => ' Gaming Maus '
+                    ],
+                    'price' => [
+                        '@currency' => 'EUR',
+                        '#' => '49.99'
+                    ],
+                    'description' => 'Fast & <b>precise</b>',
+                    'note' => [
+                        'b' => 'bold',
+                        '#' => 'Text with  part'
+                    ],
+                    'image' => [
+                        '@url' => 'mouse.png'
+                    ],
+                    'stock' => '',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                '102'
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadSelfClosingElements' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_self_closing_utf8.xml'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse'
+                ],
+                '',
+                [
+                    'id' => '103',
+                    'name' => 'Monitor'
                 ]
             ],
             'offset' => null,
@@ -135,10 +229,78 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => null
         ],
+        'NestedReadISO88591SpacedDeclaration' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_iso88591_spaced_declaration.xml'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gäming Maus',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanische Tastatür',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
         'NestedReadUTF-8-BOM' => [
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions(),
             'data' => file_get_contents(__DIR__.'/inventory_utf8bom.xml'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanical keyboard',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadUTF-16LE' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_utf16le.xml'),
             'expected' => [
                 [
                     'id' => '101',
@@ -247,6 +409,141 @@ return (function (): Generator {
             'offset' => null,
             'limit' => null,
             'expectedException' => InvalidArgumentException::class
+        ],
+        'InvalidLimit' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_utf8.xml'),
+            'expected' => null,
+            'offset' => null,
+            'limit' => 0,
+            'expectedException' => InvalidArgumentException::class
+        ],
+        'InvalidOffset' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_utf8.xml'),
+            'expected' => null,
+            'offset' => -5,
+            'limit' => null,
+            'expectedException' => InvalidArgumentException::class
+        ],
+        'MalformedXml' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/inventory_malformed_utf8.xml'),
+            'expected' => null,
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => XmlParseError::class
+        ],
+        'NamespacePrefixFromOptions' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@g:highlight' => 'true',
+                    'g:id' => 'G-1',
+                    'other:id' => 'O-1',
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['g' => 'http://base.google.com/ns/1.0'])
+        ],
+        'NamespacePrefixFromDocument' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@google:highlight' => 'true',
+                    'google:id' => 'G-1',
+                    'other:id' => 'O-1',
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions()
+        ],
+        'NamespacedPath' => [
+            'path' => ['atom:feed', 'atom:entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'atom:title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['atom' => 'http://www.w3.org/2005/Atom'])
+        ],
+        'PathWithoutPrefixMatchesAnyNamespace' => [
+            'path' => ['feed', 'entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'title' => 'Extension'
+                ],
+                [
+                    'title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions()
+        ],
+        'StripNamespaces' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@highlight' => 'true',
+                    'id' => [
+                        'G-1',
+                        'O-1'
+                    ],
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions([], XmlOptions::STRIP_NAMESPACES)
+        ],
+        'StripNamespacesWithNamespacedPath' => [
+            'path' => ['atom:feed', 'atom:entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['atom' => 'http://www.w3.org/2005/Atom'], XmlOptions::STRIP_NAMESPACES)
+        ],
+        'UnregisteredNamespacePrefix' => [
+            'path' => ['x:feed', 'entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => null,
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => InvalidArgumentException::class,
+            'xmlOptions' => new XmlOptions()
         ],
     ];
 })();

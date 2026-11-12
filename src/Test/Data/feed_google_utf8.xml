@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:google="http://base.google.com/ns/1.0" xmlns:other="urn:other">
+	<channel>
+		<item google:highlight="true">
+			<google:id>G-1</google:id>
+			<other:id>O-1</other:id>
+			<title>Gaming Mouse</title>
+		</item>
+	</channel>
+</rss>

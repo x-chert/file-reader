@@ -34,7 +34,8 @@
 		"php": "^8.4",
 		"ext-iconv": "*",
 		"ext-xmlreader": "*",
-		"ext-simplexml": "*",
+		"ext-dom": "*",
+		"ext-libxml": "*",
 		"ext-mbstring": "*",
 		"xchert/util": "~1.0",
 		"symfony/serializer": "~7.0 || ~8.0"

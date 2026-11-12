@@ -7,23 +7,33 @@ namespace Xchert\FileReader\Xml;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\InvalidCharsetException;
 use Xchert\FileReader\Exception\ReadError;
+use Xchert\FileReader\Exception\XmlParseError;
 use Xchert\FileReader\FileIterator;
 use Xchert\FileReader\Io\IoUtil;
 use Xchert\Util\Value;
 
 class XmlIterator extends FileIterator
 {
+    private readonly XmlElementConverter $converter;
+
+    /** @var array<int, array{?string, string}> Namespace URI (null matches any namespace) and local name per path segment */
+    private readonly array $segments;
+
     public function __construct(
         protected readonly array $path,
         CharsetOptions $charsetOptions = new CharsetOptions(),
+        protected readonly XmlOptions $xmlOptions = new XmlOptions(),
     ) {
         $this->validatePath($path);
+        $this->segments = $this->parsePath($path);
+        $this->converter = new XmlElementConverter($xmlOptions);
 
         parent::__construct($charsetOptions);
     }
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      * @throws ReadError
      */
     public function iterateFile(string $file, ?int $offset = null, ?int $limit = null): \Generator
@@ -38,43 +48,33 @@ class XmlIterator extends FileIterator
             throw new ReadError($file);
         }
 
-        yield from $this->iterateStream($stream, $offset, $limit);
-
-        \fclose($stream);
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
+        }
     }
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      */
     public function iterateString(string $content, ?int $offset = null, ?int $limit = null): \Generator
     {
         $stream = @\fopen('php://temp', 'w+');
         \fwrite($stream, $content);
         \rewind($stream);
-        $hasEncoding = $this->hasEncoding($stream);
-        \fclose($stream);
 
-        if (!$hasEncoding) {
-            $encoding = $this->charsetOptions->getEncoding();
-
-            if (!IoUtil::isValidEncoding($encoding)) {
-                throw new InvalidCharsetException($encoding);
-            }
-
-            $content = \iconv(
-                $encoding,
-                IoUtil::createIconvEncoding('UTF-8', ...$this->charsetOptions->getModifiers()),
-                $content,
-            );
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
         }
-
-        $reader = \XMLReader::fromString($content);
-
-        yield from $this->readXml($reader, $offset ?? 0, $limit);
     }
 
     /**
      * @throws InvalidCharsetException
+     * @throws XmlParseError
      */
     public function iterateStream($stream, ?int $offset = null, ?int $limit = null): \Generator
     {
@@ -85,6 +85,21 @@ class XmlIterator extends FileIterator
         $offset ??= 0;
         $this->validateOffsetLimit($offset, $limit);
 
+        // Encoding detection rewinds the stream, so non-seekable streams are buffered first
+        if (!\stream_get_meta_data($stream)['seekable']) {
+            $buffer = \fopen('php://temp', 'w+');
+            \stream_copy_to_stream($stream, $buffer);
+            \rewind($buffer);
+
+            try {
+                yield from $this->iterateStream($buffer, $offset, $limit);
+            } finally {
+                \fclose($buffer);
+            }
+
+            return;
+        }
+
         $hasEncoding = $this->hasEncoding($stream);
         \rewind($stream);
 
@@ -92,81 +107,86 @@ class XmlIterator extends FileIterator
             IoUtil::appendCharacterSetFilter($stream, $this->charsetOptions);
         }
 
-        $uri = \stream_get_meta_data($stream)['uri'] ?? null;
+        // Read from the stream itself (not its URI) so appended stream filters are applied
+        $reader = \XMLReader::fromStream($stream);
 
-        if ($uri) {
-            $reader = \XMLReader::open($uri);
-        } else {
-            $reader = \XMLReader::fromStream($stream);
+        try {
+            yield from $this->readXml($reader, $offset, $limit);
+        } finally {
+            $reader->close();
         }
-
-        yield from $this->readXml($reader, $offset, $limit);
-
-        $reader->close();
     }
 
     protected function readXml(\XMLReader $reader, int $offset = 0, ?int $limit = null): \Generator
     {
-        $currentPath = [];
+        $targetDepth = \count($this->path);
         $iteration = 0;
         $fetched = 0;
+        $moved = $this->guard($reader->read(...));
 
-        while ($reader->read()) {
-            if ($reader->nodeType === \XMLReader::ELEMENT) {
-                $currentPath[] = $reader->localName;
+        while ($moved) {
+            if ($reader->nodeType !== \XMLReader::ELEMENT) {
+                $moved = $this->guard($reader->read(...));
+                continue;
+            }
 
-                if ($this->isInsideTarget($currentPath)) {
-                    if ($iteration >= $offset) {
-                        $outerXml = $reader->readOuterXml();
+            $depth = $reader->depth;
 
-                        if (!empty($outerXml)) {
-                            $xmlElement = \simplexml_load_string($outerXml);
+            // Ancestor level: descend into a matching element, skip the subtree of a non-matching one
+            if ($depth < $targetDepth) {
+                [$namespaceUri, $localName] = $this->segments[$depth];
+                $matches = $reader->localName === $localName
+                    && ($namespaceUri === null || $reader->namespaceURI === $namespaceUri);
 
-                            yield \json_decode(\json_encode($xmlElement), true);
-                            $fetched++;
+                $moved = $this->guard($matches ? $reader->read(...) : $reader->next(...));
+                continue;
+            }
 
-                            if ($fetched === $limit) {
-                                break;
-                            }
-                        }
-                    }
+            if ($iteration >= $offset) {
+                $element = $this->guard($reader->expand(...));
 
-                    $iteration++;
-                    \array_pop($currentPath);
-                    $reader->next();
+                if ($element instanceof \DOMElement) {
+                    yield $this->converter->convert($element);
+                    $fetched++;
 
-                    if ($reader->nodeType === \XMLReader::NONE) {
-                        break;
-                    }
-
-                    if ($reader->nodeType === \XMLReader::ELEMENT) {
-                        $currentPath[] = $reader->localName;
+                    if ($fetched === $limit) {
+                        return;
                     }
                 }
             }
 
-            if ($reader->nodeType === \XMLReader::END_ELEMENT) {
-                \array_pop($currentPath);
-            }
+            $iteration++;
+            $moved = $this->guard($reader->next(...));
         }
     }
 
-    private function isInsideTarget(array $currentPath): bool
+    /**
+     * Runs a libxml operation and converts its errors into an exception instead of PHP warnings.
+     * Internal error handling is only enabled for the operation itself, so it does not leak into
+     * the caller's code between yields.
+     *
+     * @throws XmlParseError
+     */
+    private function guard(callable $operation): mixed
     {
-        $targetLength = \count($this->path);
-        $currentLength = \count($currentPath);
+        $useInternalErrors = \libxml_use_internal_errors(true);
+        \libxml_clear_errors();
 
-        if ($currentLength !== $targetLength + 1) {
-            return false;
+        try {
+            $result = $operation();
+            $errors = \libxml_get_errors();
+        } finally {
+            \libxml_clear_errors();
+            \libxml_use_internal_errors($useInternalErrors);
         }
 
-        for ($i = 0; $i < $targetLength; $i++) {
-            if ($currentPath[$i] !== $this->path[$i]) {
-                return false;
+        foreach ($errors as $error) {
+            if ($error->level >= \LIBXML_ERR_ERROR) {
+                throw new XmlParseError($error);
             }
         }
 
-        return true;
+        return $result;
     }
 
     private function validatePath(array $path): void
@@ -176,6 +196,33 @@ class XmlIterator extends FileIterator
                 throw new \InvalidArgumentException('Path must be an array of non-empty strings.');
             }
         }
+    }
+
+    /**
+     * Splits prefixed segments ("g:item") into the registered namespace URI and the local name.
+     * Segments without prefix match the local name in any namespace.
+     */
+    private function parsePath(array $path): array
+    {
+        $segments = [];
+
+        foreach ($path as $segment) {
+            if (!\str_contains($segment, ':')) {
+                $segments[] = [null, $segment];
+                continue;
+            }
+
+            [$prefix, $localName] = \explode(':', $segment, 2);
+            $namespaceUri = $this->xmlOptions->getNamespaceUri($prefix);
+
+            if ($namespaceUri === null) {
+                throw new \InvalidArgumentException(\sprintf('Namespace prefix "%s" in path segment "%s" is not registered.', $prefix, $segment));
+            }
+
+            $segments[] = [$namespaceUri, $localName];
+        }
+
+        return $segments;
     }
 
     private function hasEncoding($stream): bool
@@ -205,8 +252,10 @@ class XmlIterator extends FileIterator
 
         \rewind($stream);
 
-        $header = \str_replace('\x00', '', $header);
+        // Remove NUL bytes (UTF-16) and a leading byte order mark (UTF-8, UTF-16 BE/LE)
+        $header = \str_replace("\x00", '', $header);
+        $header = \preg_replace('/^(\xEF\xBB\xBF|\xFE\xFF|\xFF\xFE)/', '', $header);
 
-        return (bool)\preg_match('/^<\?xml\s+[^>]*encoding=/i', $header);
+        return (bool)\preg_match('/^<\?xml\s[^>]*\bencoding\s*=/i', $header);
     }
 }
