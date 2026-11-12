@@ -115,3 +115,36 @@ foreach ($iterator->iterateStream($aStreamResource, $offset, $limit) as $row) {
 ```
 
 > The XmlIterator converts all data to UTF-8.
+
+**Output format**
+
+Each element within the path is converted into an array, or into a string if it only contains text:
+
+- Attributes are prefixed with `@`, their values are always strings.
+- Child elements are keyed by their name, including a namespace prefix (e.g. `g:id`). Repeated elements become a list.
+- Text and CDATA content is returned as string, or as `#` if the element also has attributes or child elements.
+- Empty elements become an empty string. Comments and processing instructions are ignored.
+
+```xml
+<product id="101">
+    <name>Gaming Mouse</name>
+    <price currency="EUR">49.99</price>
+    <description><![CDATA[Fast & <b>precise</b>]]></description>
+    <stock/>
+    <categories>
+        <category>56</category>
+        <category>65</category>
+    </categories>
+</product>
+```
+
+```php
+[
+    '@id' => '101',
+    'name' => 'Gaming Mouse',
+    'price' => ['@currency' => 'EUR', '#' => '49.99'],
+    'description' => 'Fast & <b>precise</b>',
+    'stock' => '',
+    'categories' => ['category' => ['56', '65']],
+]
+```

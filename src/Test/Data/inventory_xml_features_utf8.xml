@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory xmlns:g="http://base.google.com/ns/1.0">
+	<products>
+		<product id="101" active="true">
+			<g:id>G-101</g:id>
+			<name xml:lang="de"> Gaming Maus </name>
+			<price currency="EUR">49.99</price>
+			<description><![CDATA[Fast & <b>precise</b>]]></description>
+			<note>Text with <b>bold</b> part</note>
+			<image url="mouse.png"/>
+			<stock></stock>
+			<!-- internal comment -->
+			<categories>
+				<category>56</category>
+				<category>65</category>
+			</categories>
+		</product>
+		<product>102</product>
+	</products>
+</inventory>

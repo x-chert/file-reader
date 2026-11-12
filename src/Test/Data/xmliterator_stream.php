@@ -83,6 +83,45 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => null
         ],
+        'XmlFeatures' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => fopen(__DIR__.'/inventory_xml_features_utf8.xml', 'r'),
+            'expected' => [
+                [
+                    '@id' => '101',
+                    '@active' => 'true',
+                    'g:id' => 'G-101',
+                    'name' => [
+                        '@xml:lang' => 'de',
+                        '#' => ' Gaming Maus '
+                    ],
+                    'price' => [
+                        '@currency' => 'EUR',
+                        '#' => '49.99'
+                    ],
+                    'description' => 'Fast & <b>precise</b>',
+                    'note' => [
+                        'b' => 'bold',
+                        '#' => 'Text with  part'
+                    ],
+                    'image' => [
+                        '@url' => 'mouse.png'
+                    ],
+                    'stock' => '',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                '102'
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
         'NestedReadSelfClosingElements' => [
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions(),
@@ -92,7 +131,7 @@ return (function (): Generator {
                     'id' => '101',
                     'name' => 'Gaming Mouse'
                 ],
-                [],
+                '',
                 [
                     'id' => '103',
                     'name' => 'Monitor'

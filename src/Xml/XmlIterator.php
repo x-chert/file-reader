@@ -14,11 +14,14 @@ use Xchert\Util\Value;
 
 class XmlIterator extends FileIterator
 {
+    private readonly XmlElementConverter $converter;
+
     public function __construct(
         protected readonly array $path,
         CharsetOptions $charsetOptions = new CharsetOptions(),
     ) {
         $this->validatePath($path);
+        $this->converter = new XmlElementConverter();
 
         parent::__construct($charsetOptions);
     }
@@ -131,12 +134,10 @@ class XmlIterator extends FileIterator
             }
 
             if ($iteration >= $offset) {
-                $outerXml = $this->guard($reader->readOuterXml(...));
+                $element = $this->guard($reader->expand(...));
 
-                if (!empty($outerXml)) {
-                    $xmlElement = $this->guard(fn() => \simplexml_load_string($outerXml));
-
-                    yield \json_decode(\json_encode($xmlElement), true);
+                if ($element instanceof \DOMElement) {
+                    yield $this->converter->convert($element);
                     $fetched++;
 
                     if ($fetched === $limit) {
