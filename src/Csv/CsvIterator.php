@@ -10,17 +10,20 @@ use Xchert\FileReader\Exception\CharsetConversionException;
 use Xchert\FileReader\Exception\ReadError;
 use Xchert\FileReader\FileIterator;
 use Xchert\FileReader\Io\IoUtil;
+use Xchert\FileReader\Middleware\MiddlewareInterface;
 use Xchert\Util\Value;
 
 class CsvIterator extends FileIterator
 {
     public const string SKIP_EMPTY = 'skip_empty';
 
+    /** @param MiddlewareInterface[] $middlewares */
     public function __construct(
         protected readonly CsvOptions $csvOptions,
-        CharsetOptions $charsetOptions = new CharsetOptions()
+        CharsetOptions $charsetOptions = new CharsetOptions(),
+        array $middlewares = []
     ) {
-        parent::__construct($charsetOptions);
+        parent::__construct($charsetOptions, $middlewares);
     }
 
     public function iterateFile(string $file, ?int $offset = null, ?int $limit = null): \Generator
@@ -99,7 +102,7 @@ class CsvIterator extends FileIterator
 
             if (!$headerBehavior->isUsingHeader()) {
                 $fetched++;
-                yield $record;
+                yield $this->applyMiddlewares($record);
 
                 if ($fetched === $limit) {
                     return;
@@ -109,7 +112,7 @@ class CsvIterator extends FileIterator
             }
 
             \assert(\is_array($header));
-            yield $this->buildRecord($header, $record);
+            yield $this->applyMiddlewares($this->buildRecord($header, $record));
             $fetched++;
 
             if ($fetched === $limit) {

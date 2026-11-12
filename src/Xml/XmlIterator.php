@@ -10,6 +10,7 @@ use Xchert\FileReader\Exception\ReadError;
 use Xchert\FileReader\Exception\XmlParseError;
 use Xchert\FileReader\FileIterator;
 use Xchert\FileReader\Io\IoUtil;
+use Xchert\FileReader\Middleware\MiddlewareInterface;
 use Xchert\Util\Value;
 
 class XmlIterator extends FileIterator
@@ -19,16 +20,18 @@ class XmlIterator extends FileIterator
     /** @var array<int, array{?string, string}> Namespace URI (null matches any namespace) and local name per path segment */
     private readonly array $segments;
 
+    /** @param MiddlewareInterface[] $middlewares */
     public function __construct(
         protected readonly array $path,
         CharsetOptions $charsetOptions = new CharsetOptions(),
         protected readonly XmlOptions $xmlOptions = new XmlOptions(),
+        array $middlewares = [],
     ) {
         $this->validatePath($path);
         $this->segments = $this->parsePath($path);
         $this->converter = new XmlElementConverter($xmlOptions);
 
-        parent::__construct($charsetOptions);
+        parent::__construct($charsetOptions, $middlewares);
     }
 
     /**
@@ -146,7 +149,7 @@ class XmlIterator extends FileIterator
                 $element = $this->guard($reader->expand(...));
 
                 if ($element instanceof \DOMElement) {
-                    yield $this->converter->convert($element);
+                    yield $this->applyMiddlewares($this->converter->convert($element));
                     $fetched++;
 
                     if ($fetched === $limit) {

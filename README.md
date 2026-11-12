@@ -10,6 +10,7 @@ A memory-efficient and flexible PHP library for streaming and iterating files wi
 - **Charset Conversion:** Automatically handles character encoding transformations (e.g., ISO-8859-1 to UTF-8) during
   stream reading.
 - **Pagination Support:** Built-in `offset` and `limit` support.
+- **Middleware:** Process each record before it is returned.
 
 ## Installation
 
@@ -40,7 +41,8 @@ $iterator = new CsvIterator(
   ),
   charsetOptions: new CharsetOptions(               // optional; encoding of the csv data, defaults to UTF-8
       encoding: 'UTF-8'
-  )
+  ),
+  middlewares: []                                   // optional; see Middleware
 );
 
 // Offset and limit are always optional
@@ -96,7 +98,8 @@ $iterator = new XmlIterator(
   xmlOptions: new XmlOptions(                       // optional
       ['g' => 'http://base.google.com/ns/1.0'],     // optional; namespace prefixes used in path and output
       XmlOptions::STRIP_NAMESPACES                  // optional; flag to output names without namespace prefix
-  )
+  ),
+  middlewares: []                                   // optional; see Middleware
 );
 
 // Offset and limit are always optional
@@ -187,3 +190,43 @@ $iterator = new XmlIterator(
 
 > Elements with the same local name in different namespaces can no longer be distinguished and are merged into a list,
 > e.g. `<title>` and `<g:title>` become `'title' => ['…', '…']`.
+
+### Middleware
+
+Every iterator takes an optional list of middlewares. Each record passes all middlewares in the given order before it
+is returned. The value returned by a middleware is passed to the next one. Records skipped by `offset` or beyond
+`limit` are not processed.
+
+```php
+<?php
+
+use Xchert\FileReader\Csv\CsvIterator;
+use Xchert\FileReader\Csv\CsvOptions;
+use Xchert\FileReader\Middleware\MiddlewareInterface;
+
+class TrimMiddleware implements MiddlewareInterface
+{
+    public function process(mixed $record): mixed
+    {
+        return \array_map(\trim(...), $record);
+    }
+}
+
+$iterator = new CsvIterator(
+  csvOptions: new CsvOptions(),
+  middlewares: [new TrimMiddleware()]
+);
+```
+
+For simple cases, `Middleware` wraps any callable:
+
+```php
+<?php
+
+use Xchert\FileReader\Middleware\Middleware;
+
+$iterator = new CsvIterator(
+  csvOptions: new CsvOptions(),
+  middlewares: [new Middleware(static fn (array $record) => \array_map(\trim(...), $record))]
+);
+```
