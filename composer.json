@@ -25,10 +25,12 @@
 		},
 		"files": [
 			"src/Io/register_stream_filters.php"
-		],
-		"exclude-from-classmap": [
-			"src/Test/"
 		]
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Xchert\\FileReader\\Test\\": "tests/"
+		}
 	},
 	"require": {
 		"php": "^8.4",
@@ -45,7 +47,8 @@
 	},
 	"archive": {
 		"exclude": [
-			"/.github"
+			"/.github",
+			"/tests"
 		]
 	}
 }
