@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\XmlParseError;
+use Xchert\FileReader\Xml\XmlOptions;
 
 return (function (): Generator {
     yield from [
@@ -435,6 +436,114 @@ return (function (): Generator {
             'offset' => null,
             'limit' => null,
             'expectedException' => XmlParseError::class
+        ],
+        'NamespacePrefixFromOptions' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@g:highlight' => 'true',
+                    'g:id' => 'G-1',
+                    'other:id' => 'O-1',
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['g' => 'http://base.google.com/ns/1.0'])
+        ],
+        'NamespacePrefixFromDocument' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@google:highlight' => 'true',
+                    'google:id' => 'G-1',
+                    'other:id' => 'O-1',
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions()
+        ],
+        'NamespacedPath' => [
+            'path' => ['atom:feed', 'atom:entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'atom:title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['atom' => 'http://www.w3.org/2005/Atom'])
+        ],
+        'PathWithoutPrefixMatchesAnyNamespace' => [
+            'path' => ['feed', 'entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'title' => 'Extension'
+                ],
+                [
+                    'title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions()
+        ],
+        'StripNamespaces' => [
+            'path' => ['rss', 'channel'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_google_utf8.xml'),
+            'expected' => [
+                [
+                    '@highlight' => 'true',
+                    'id' => [
+                        'G-1',
+                        'O-1'
+                    ],
+                    'title' => 'Gaming Mouse'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions([], XmlOptions::STRIP_NAMESPACES)
+        ],
+        'StripNamespacesWithNamespacedPath' => [
+            'path' => ['atom:feed', 'atom:entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => [
+                [
+                    'title' => 'Atom'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null,
+            'xmlOptions' => new XmlOptions(['atom' => 'http://www.w3.org/2005/Atom'], XmlOptions::STRIP_NAMESPACES)
+        ],
+        'UnregisteredNamespacePrefix' => [
+            'path' => ['x:feed', 'entries'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => file_get_contents(__DIR__.'/feed_atom_utf8.xml'),
+            'expected' => null,
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => InvalidArgumentException::class,
+            'xmlOptions' => new XmlOptions()
         ],
     ];
 })();

@@ -16,12 +16,17 @@ class XmlIterator extends FileIterator
 {
     private readonly XmlElementConverter $converter;
 
+    /** @var array<int, array{?string, string}> Namespace URI (null matches any namespace) and local name per path segment */
+    private readonly array $segments;
+
     public function __construct(
         protected readonly array $path,
         CharsetOptions $charsetOptions = new CharsetOptions(),
+        protected readonly XmlOptions $xmlOptions = new XmlOptions(),
     ) {
         $this->validatePath($path);
-        $this->converter = new XmlElementConverter();
+        $this->segments = $this->parsePath($path);
+        $this->converter = new XmlElementConverter($xmlOptions);
 
         parent::__construct($charsetOptions);
     }
@@ -129,7 +134,11 @@ class XmlIterator extends FileIterator
 
             // Ancestor level: descend into a matching element, skip the subtree of a non-matching one
             if ($depth < $targetDepth) {
-                $moved = $this->guard($reader->localName === $this->path[$depth] ? $reader->read(...) : $reader->next(...));
+                [$namespaceUri, $localName] = $this->segments[$depth];
+                $matches = $reader->localName === $localName
+                    && ($namespaceUri === null || $reader->namespaceURI === $namespaceUri);
+
+                $moved = $this->guard($matches ? $reader->read(...) : $reader->next(...));
                 continue;
             }
 
@@ -187,6 +196,33 @@ class XmlIterator extends FileIterator
                 throw new \InvalidArgumentException('Path must be an array of non-empty strings.');
             }
         }
+    }
+
+    /**
+     * Splits prefixed segments ("g:item") into the registered namespace URI and the local name.
+     * Segments without prefix match the local name in any namespace.
+     */
+    private function parsePath(array $path): array
+    {
+        $segments = [];
+
+        foreach ($path as $segment) {
+            if (!\str_contains($segment, ':')) {
+                $segments[] = [null, $segment];
+                continue;
+            }
+
+            [$prefix, $localName] = \explode(':', $segment, 2);
+            $namespaceUri = $this->xmlOptions->getNamespaceUri($prefix);
+
+            if ($namespaceUri === null) {
+                throw new \InvalidArgumentException(\sprintf('Namespace prefix "%s" in path segment "%s" is not registered.', $prefix, $segment));
+            }
+
+            $segments[] = [$namespaceUri, $localName];
+        }
+
+        return $segments;
     }
 
     private function hasEncoding($stream): bool

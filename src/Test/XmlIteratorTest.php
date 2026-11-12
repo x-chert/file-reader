@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Test\Data\FileDataProvider;
 use Xchert\FileReader\Xml\XmlIterator;
+use Xchert\FileReader\Xml\XmlOptions;
 
 class XmlIteratorTest extends TestCase
 {
@@ -20,13 +21,14 @@ class XmlIteratorTest extends TestCase
         mixed $expected,
         ?int $offset = null,
         ?int $limit = null,
-        ?string $expectedException = null
+        ?string $expectedException = null,
+        XmlOptions $xmlOptions = new XmlOptions()
     ): void {
         if ($expectedException !== null) {
             $this->expectException($expectedException);
         }
 
-        $iterator = new XmlIterator($path, $charsetOptions);
+        $iterator = new XmlIterator($path, $charsetOptions, $xmlOptions);
         $result = [];
 
         foreach ($iterator->iterateFile($file, $offset, $limit) as $row) {
@@ -46,13 +48,14 @@ class XmlIteratorTest extends TestCase
         mixed $expected,
         ?int $offset = null,
         ?int $limit = null,
-        ?string $expectedException = null
+        ?string $expectedException = null,
+        XmlOptions $xmlOptions = new XmlOptions()
     ): void {
         if ($expectedException !== null) {
             $this->expectException($expectedException);
         }
 
-        $iterator = new XmlIterator($path, $charsetOptions);
+        $iterator = new XmlIterator($path, $charsetOptions, $xmlOptions);
         $result = [];
 
         foreach ($iterator->iterateString($data, $offset, $limit) as $row) {
@@ -72,13 +75,14 @@ class XmlIteratorTest extends TestCase
         mixed $expected,
         ?int $offset = null,
         ?int $limit = null,
-        ?string $expectedException = null
+        ?string $expectedException = null,
+        XmlOptions $xmlOptions = new XmlOptions()
     ): void {
         if ($expectedException !== null) {
             $this->expectException($expectedException);
         }
 
-        $iterator = new XmlIterator($path, $charsetOptions);
+        $iterator = new XmlIterator($path, $charsetOptions, $xmlOptions);
         $result = [];
 
         try {

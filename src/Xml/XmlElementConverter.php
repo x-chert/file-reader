@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Xml;
 
-class XmlElementConverter
+readonly class XmlElementConverter
 {
+    public function __construct(
+        private XmlOptions $xmlOptions = new XmlOptions(),
+    ) {}
+
     public function convert(\DOMElement $element): array|string
     {
         $result = [];
@@ -14,7 +18,7 @@ class XmlElementConverter
         $hasChildElements = false;
 
         foreach ($element->attributes as $attribute) {
-            $result['@'.$attribute->nodeName] = $attribute->value;
+            $result['@'.$this->getName($attribute)] = $attribute->value;
         }
 
         foreach ($element->childNodes as $child) {
@@ -29,7 +33,7 @@ class XmlElementConverter
             }
 
             $hasChildElements = true;
-            $name = $child->nodeName;
+            $name = $this->getName($child);
             $value = $this->convert($child);
 
             if (!\array_key_exists($name, $result)) {
@@ -56,5 +60,22 @@ class XmlElementConverter
         }
 
         return $result;
+    }
+
+    private function getName(\DOMElement|\DOMAttr $node): string
+    {
+        $namespaceUri = $node->namespaceURI;
+
+        if ($namespaceUri === null) {
+            return $node->nodeName;
+        }
+
+        if ($this->xmlOptions->hasFlags(XmlOptions::STRIP_NAMESPACES)) {
+            return $node->localName;
+        }
+
+        $prefix = $this->xmlOptions->getPrefix($namespaceUri);
+
+        return $prefix === null ? $node->nodeName : $prefix.':'.$node->localName;
     }
 }
