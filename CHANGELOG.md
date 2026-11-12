@@ -1,3 +1,22 @@
+# v1.1.0
+### New features
+
+* [#25 - XmlIterator](https://github.com/x-chert/file-reader/pull/25)
+* [#27 - Reworks  to fix several reading bugs, make error handling explicit and add namespace support.](https://github.com/x-chert/file-reader/pull/27)
+* [#28 - Release CsvIterator resources in finally blocks](https://github.com/x-chert/file-reader/pull/28)
+* [#30 - Middleware support to FileIterator](https://github.com/x-chert/file-reader/pull/30)
+* [#31 - Add ListElementConverter middleware for XML lists](https://github.com/x-chert/file-reader/pull/31)
+* [#32 - Improvments for CsvIterator](https://github.com/x-chert/file-reader/pull/32)
+
+### Documentation
+
+* [#26 - Update README.md](https://github.com/x-chert/file-reader/pull/26)
+
+### Other
+
+* [#29 - Moved testsuite](https://github.com/x-chert/file-reader/pull/29)
+
+
 # v1.0.0
 ### New features
 
