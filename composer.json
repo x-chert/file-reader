@@ -40,7 +40,6 @@
 		"ext-libxml": "*",
 		"ext-mbstring": "*",
 		"xchert/util": "~1.0",
-		"symfony/serializer": "~7.0 || ~8.0",
 		"xchert/object-schema": "^1.0"
 	},
 	"require-dev": {

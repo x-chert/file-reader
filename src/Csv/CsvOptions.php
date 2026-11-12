@@ -13,7 +13,7 @@ class CsvOptions extends Pod
 
     public const string DEFAULT_DELIMITER = ';';
     public const string DEFAULT_ENCLOSURE = '"';
-    public const string DEFAULT_ESCAPE = '\\';
+    public const string DEFAULT_ESCAPE = '';
 
     public function __construct(
         protected string $delimiter = self::DEFAULT_DELIMITER,
@@ -22,6 +22,19 @@ class CsvOptions extends Pod
         protected HeaderBehavior $headerBehavior = HeaderBehavior::FlatHeader,
         string ...$flags
     ) {
+        // fgetcsv only supports single byte characters
+        if (\strlen($delimiter) !== 1) {
+            throw new \InvalidArgumentException(\sprintf('Delimiter must be a single byte character. "%s" given', $delimiter));
+        }
+
+        if (\strlen($enclosure) !== 1) {
+            throw new \InvalidArgumentException(\sprintf('Enclosure must be a single byte character. "%s" given', $enclosure));
+        }
+
+        if (\strlen($escape) > 1) {
+            throw new \InvalidArgumentException(\sprintf('Escape must be empty or a single byte character. "%s" given', $escape));
+        }
+
         $this->setFlags(...$flags);
     }
 

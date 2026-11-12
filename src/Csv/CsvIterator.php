@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Xchert\FileReader\Csv;
 
-use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Xchert\FileReader\Charset\CharsetOptions;
 use Xchert\FileReader\Exception\CharsetConversionException;
 use Xchert\FileReader\Exception\ReadError;
@@ -47,7 +46,7 @@ class CsvIterator extends FileIterator
 
     public function iterateString(string $content, ?int $offset = null, ?int $limit = null): \Generator
     {
-        $stream = @\fopen('php://memory', 'w+');
+        $stream = @\fopen('php://temp', 'w+');
         \fwrite($stream, $content);
         \rewind($stream);
 
@@ -58,7 +57,7 @@ class CsvIterator extends FileIterator
         }
     }
 
-    /** @var resource $stream */
+    /** @param resource $stream */
     public function iterateStream($stream, ?int $offset = null, ?int $limit = null): \Generator
     {
         if (!\is_resource($stream)) {
@@ -70,15 +69,18 @@ class CsvIterator extends FileIterator
 
         $header = null;
         $fetched = 0;
-        $iteration = 0;
+        $skipped = 0;
         $headerBehavior = $this->csvOptions->getHeaderBehavior();
+        $skipEmpty = $this->csvOptions->hasFlags(self::SKIP_EMPTY);
 
         if ($headerBehavior->hasHeader()) {
-            // Read first line of file for header
-            $header = $this->readCsv($stream);
+            // Read first non-empty line of file for header
+            do {
+                $header = $this->readCsv($stream);
+            } while ($header !== null && $this->isEmpty($header));
 
             // Stream is empty
-            if ($header === null || $this->isEmpty($header)) {
+            if ($header === null) {
                 return;
             }
 
@@ -89,33 +91,19 @@ class CsvIterator extends FileIterator
         }
 
         while (($record = $this->readCsv($stream)) !== null) {
-            if ($this->csvOptions->hasFlags(self::SKIP_EMPTY) && $this->isEmpty($record)) {
+            // fgetcsv returns [null] for blank lines, which are no records
+            if ($record === [null] || ($skipEmpty && $this->isEmpty($record))) {
                 continue;
             }
 
-            if ($offset !== null && $iteration < $offset) {
-                $iteration++;
+            if ($offset !== null && $skipped < $offset) {
+                $skipped++;
                 continue;
             }
 
-            $iteration++;
+            yield $this->applyMiddlewares($header === null ? $record : $this->buildRecord($header, $record));
 
-            if (!$headerBehavior->isUsingHeader()) {
-                $fetched++;
-                yield $this->applyMiddlewares($record);
-
-                if ($fetched === $limit) {
-                    return;
-                }
-
-                continue;
-            }
-
-            \assert(\is_array($header));
-            yield $this->applyMiddlewares($this->buildRecord($header, $record));
-            $fetched++;
-
-            if ($fetched === $limit) {
+            if (++$fetched === $limit) {
                 return;
             }
         }
@@ -177,7 +165,7 @@ class CsvIterator extends FileIterator
         $dataCount = \count($data);
 
         if ($headerCount > $dataCount) {
-            $data = static::append($data, $headerCount - $dataCount, '');
+            $data = \array_pad($data, $headerCount, '');
         } elseif ($dataCount > $headerCount) {
             $data = \array_slice($data, 0, $headerCount);
         }
@@ -185,37 +173,35 @@ class CsvIterator extends FileIterator
         return \array_combine($header, $data);
     }
 
+    /**
+     * Builds nested arrays from dot-notation header keys, e.g. "price.amount"
+     */
     protected function buildNested(array $header, array $data): array
     {
-        $stream = \fopen('php://memory', 'w+');
-        \fputcsv($stream, $header, ';', '"', '');
-        \fputcsv($stream, $data, ';', '"', '');
-        \rewind($stream);
+        $result = [];
+        $count = \count($header);
 
-        $content = \stream_get_contents($stream);
-        \fclose($stream);
+        for ($i = 0; $i < $count; $i++) {
+            $keys = \explode('.', (string)$header[$i]);
+            $last = \array_key_last($keys);
+            $target = &$result;
 
-        $decoder = new CsvEncoder([
-            CsvEncoder::DELIMITER_KEY => ';',
-            CsvEncoder::ENCLOSURE_KEY => '"',
-            CsvEncoder::AS_COLLECTION_KEY => false
-        ]);
+            foreach ($keys as $index => $key) {
+                // Empty key segments are replaced by the column index
+                $key = $key === '' ? $i : $key;
 
-        $result = $decoder->decode($content, CsvEncoder::FORMAT);
+                if ($index === $last) {
+                    $target[$key] = $data[$i] ?? '';
+                    break;
+                }
 
-        if (!\is_array($result)) {
-            throw new \RuntimeException('Data could not be re-decoded correctly.');
+                $target[$key] ??= [];
+                $target = &$target[$key];
+            }
+
+            unset($target);
         }
 
         return $result;
-    }
-
-    protected function append(array $array, int $count, mixed $value): array
-    {
-        for ($i = 1; $i <= $count; $i++) {
-            $array[] = $value;
-        }
-
-        return $array;
     }
 }

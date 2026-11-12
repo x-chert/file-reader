@@ -259,5 +259,93 @@ return (function (): Generator {
             'limit' => 1,
             'expectedException' => null
         ],
+        'SkipLeadingBlankLinesBeforeHeader' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::FlatHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "\n\nid;name\n1;Mouse",
+            'expected' => [['id' => '1', 'name' => 'Mouse']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'SkipBlankLines' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::FlatHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "id;name\n1;Mouse\n\n2;Keyboard\n\n",
+            'expected' => [['id' => '1', 'name' => 'Mouse'], ['id' => '2', 'name' => 'Keyboard']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'SkipBlankLinesWithoutHeader' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::NoHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "1;Mouse\n\n2;Keyboard",
+            'expected' => [['1', 'Mouse'], ['2', 'Keyboard']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'KeepRowsOfEmptyValues' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::FlatHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "id;name\n;\n1;Mouse",
+            'expected' => [['id' => '', 'name' => ''], ['id' => '1', 'name' => 'Mouse']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'BackslashIsNoEscapeCharacter' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::FlatHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "id;path\n1;\"C:\\dir\\\"\n2;\"say \"\"hi\"\"\"",
+            'expected' => [['id' => '1', 'path' => 'C:\\dir\\'], ['id' => '2', 'path' => 'say "hi"']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedHeaderWithDeepAndEmptyKeys' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::NestedHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "id;price.amount;price.currency;meta..x;a.b.c\n1;9.99;EUR;y;z;extra",
+            'expected' => [['id' => '1', 'price' => ['amount' => '9.99', 'currency' => 'EUR'], 'meta' => [3 => ['x' => 'y']], 'a' => ['b' => ['c' => 'z']]]],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedHeaderWithMissingColumns' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::NestedHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "id;a.b;a.c;d\n1;x",
+            'expected' => [['id' => '1', 'a' => ['b' => 'x', 'c' => ''], 'd' => '']],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedHeaderWithSingleEmptyValue' => [
+            'csvOptions' => new CsvOptions(
+                headerBehavior: HeaderBehavior::NestedHeader,
+            ),
+            'charsetOptions' => new CharsetOptions(),
+            'data' => "a.b\n\"\"",
+            'expected' => [['a' => ['b' => '']]],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
     ];
 })();
