@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inventory>
+	<meta/>
+	<archive>
+		<products>
+			<product>
+				<id>1</id>
+			</product>
+		</products>
+	</archive>
+	<products>
+		<product>
+			<id>101</id>
+			<name>Gaming Mouse</name>
+		</product>
+		<product/>
+		<product>
+			<id>103</id>
+			<name>Monitor</name>
+		</product>
+	</products>
+</inventory>

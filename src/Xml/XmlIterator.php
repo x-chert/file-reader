@@ -115,66 +115,43 @@ class XmlIterator extends FileIterator
 
     protected function readXml(\XMLReader $reader, int $offset = 0, ?int $limit = null): \Generator
     {
-        $currentPath = [];
+        $targetDepth = \count($this->path);
         $iteration = 0;
         $fetched = 0;
+        $moved = $reader->read();
 
-        while ($reader->read()) {
-            if ($reader->nodeType === \XMLReader::ELEMENT) {
-                $currentPath[] = $reader->localName;
+        while ($moved) {
+            if ($reader->nodeType !== \XMLReader::ELEMENT) {
+                $moved = $reader->read();
+                continue;
+            }
 
-                if ($this->isInsideTarget($currentPath)) {
-                    if ($iteration >= $offset) {
-                        $outerXml = $reader->readOuterXml();
+            $depth = $reader->depth;
 
-                        if (!empty($outerXml)) {
-                            $xmlElement = \simplexml_load_string($outerXml);
+            // Ancestor level: descend into a matching element, skip the subtree of a non-matching one
+            if ($depth < $targetDepth) {
+                $moved = $reader->localName === $this->path[$depth] ? $reader->read() : $reader->next();
+                continue;
+            }
 
-                            yield \json_decode(\json_encode($xmlElement), true);
-                            $fetched++;
+            if ($iteration >= $offset) {
+                $outerXml = $reader->readOuterXml();
 
-                            if ($fetched === $limit) {
-                                break;
-                            }
-                        }
-                    }
+                if (!empty($outerXml)) {
+                    $xmlElement = \simplexml_load_string($outerXml);
 
-                    $iteration++;
-                    \array_pop($currentPath);
-                    $reader->next();
+                    yield \json_decode(\json_encode($xmlElement), true);
+                    $fetched++;
 
-                    if ($reader->nodeType === \XMLReader::NONE) {
-                        break;
-                    }
-
-                    if ($reader->nodeType === \XMLReader::ELEMENT) {
-                        $currentPath[] = $reader->localName;
+                    if ($fetched === $limit) {
+                        return;
                     }
                 }
             }
 
-            if ($reader->nodeType === \XMLReader::END_ELEMENT) {
-                \array_pop($currentPath);
-            }
+            $iteration++;
+            $moved = $reader->next();
         }
-    }
-
-    private function isInsideTarget(array $currentPath): bool
-    {
-        $targetLength = \count($this->path);
-        $currentLength = \count($currentPath);
-
-        if ($currentLength !== $targetLength + 1) {
-            return false;
-        }
-
-        for ($i = 0; $i < $targetLength; $i++) {
-            if ($currentPath[$i] !== $this->path[$i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function validatePath(array $path): void

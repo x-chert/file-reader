@@ -48,6 +48,59 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => null
         ],
+        'NestedReadMinified' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => fopen(__DIR__.'/inventory_minified_utf8.xml', 'r'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanical keyboard',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadSelfClosingElements' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => fopen(__DIR__.'/inventory_self_closing_utf8.xml', 'r'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse'
+                ],
+                [],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
         'ReadSingleElement' => [
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions(),
