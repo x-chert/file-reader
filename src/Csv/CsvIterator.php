@@ -46,7 +46,7 @@ class CsvIterator extends FileIterator
 
     public function iterateString(string $content, ?int $offset = null, ?int $limit = null): \Generator
     {
-        $stream = @\fopen('php://memory', 'w+');
+        $stream = @\fopen('php://temp', 'w+');
         \fwrite($stream, $content);
         \rewind($stream);
 
@@ -57,7 +57,7 @@ class CsvIterator extends FileIterator
         }
     }
 
-    /** @var resource $stream */
+    /** @param resource $stream */
     public function iterateStream($stream, ?int $offset = null, ?int $limit = null): \Generator
     {
         if (!\is_resource($stream)) {
@@ -69,8 +69,9 @@ class CsvIterator extends FileIterator
 
         $header = null;
         $fetched = 0;
-        $iteration = 0;
+        $skipped = 0;
         $headerBehavior = $this->csvOptions->getHeaderBehavior();
+        $skipEmpty = $this->csvOptions->hasFlags(self::SKIP_EMPTY);
 
         if ($headerBehavior->hasHeader()) {
             // Read first non-empty line of file for header
@@ -91,37 +92,18 @@ class CsvIterator extends FileIterator
 
         while (($record = $this->readCsv($stream)) !== null) {
             // fgetcsv returns [null] for blank lines, which are no records
-            if ($record === [null]) {
+            if ($record === [null] || ($skipEmpty && $this->isEmpty($record))) {
                 continue;
             }
 
-            if ($this->csvOptions->hasFlags(self::SKIP_EMPTY) && $this->isEmpty($record)) {
+            if ($offset !== null && $skipped < $offset) {
+                $skipped++;
                 continue;
             }
 
-            if ($offset !== null && $iteration < $offset) {
-                $iteration++;
-                continue;
-            }
+            yield $this->applyMiddlewares($header === null ? $record : $this->buildRecord($header, $record));
 
-            $iteration++;
-
-            if (!$headerBehavior->isUsingHeader()) {
-                $fetched++;
-                yield $this->applyMiddlewares($record);
-
-                if ($fetched === $limit) {
-                    return;
-                }
-
-                continue;
-            }
-
-            \assert(\is_array($header));
-            yield $this->applyMiddlewares($this->buildRecord($header, $record));
-            $fetched++;
-
-            if ($fetched === $limit) {
+            if (++$fetched === $limit) {
                 return;
             }
         }
@@ -183,7 +165,7 @@ class CsvIterator extends FileIterator
         $dataCount = \count($data);
 
         if ($headerCount > $dataCount) {
-            $data = static::append($data, $headerCount - $dataCount, '');
+            $data = \array_pad($data, $headerCount, '');
         } elseif ($dataCount > $headerCount) {
             $data = \array_slice($data, 0, $headerCount);
         }
@@ -221,14 +203,5 @@ class CsvIterator extends FileIterator
         }
 
         return $result;
-    }
-
-    protected function append(array $array, int $count, mixed $value): array
-    {
-        for ($i = 1; $i <= $count; $i++) {
-            $array[] = $value;
-        }
-
-        return $array;
     }
 }
