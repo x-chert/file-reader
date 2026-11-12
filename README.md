@@ -230,3 +230,41 @@ $iterator = new CsvIterator(
   middlewares: [new Middleware(static fn (array $record) => \array_map(\trim(...), $record))]
 );
 ```
+
+#### ListElementConverter
+
+XML cannot distinguish a list with a single element from a single value. The `ListElementConverter` uses an object
+schema ([xchert/object-schema](https://github.com/x-chert/object-schema)) to ensure that `list` properties are always
+returned as lists when reading XML data.
+
+```php
+<?php
+
+use Xchert\FileReader\Xml\Middleware\ListElementConverter;
+use Xchert\FileReader\Xml\XmlIterator;
+use Xchert\Schema\SchemaRegistry;
+
+$registry = SchemaRegistry::fromArray([
+    [
+        'name' => 'product',
+        'properties' => [
+            ['name' => 'tag', 'type' => 'list<string>'],
+            ['name' => 'categories', 'type' => 'list<string>'],
+        ],
+    ],
+]);
+
+$iterator = new XmlIterator(
+  path: ['inventory'],
+  middlewares: [new ListElementConverter($registry, 'product')]   // schema of each record; nested object<…> types are resolved by the registry
+);
+
+// <product id="1"><tag>new</tag><categories><category>56</category></categories></product>
+// ['@id' => '1', 'tag' => ['new'], 'categories' => ['56']]
+```
+
+- A single element is wrapped into a list, an empty element becomes `[]`.
+- A wrapper element with a single child name (e.g. `<categories><category>…</category></categories>`) is unwrapped.
+  For lists of objects, a single key that is a property of the item schema is treated as a single object.
+- Lists within nested `object<…>` and list items are converted as well. All other values are returned unchanged.
+- Elements whose nested schema is not found in the registry are returned unchanged.
