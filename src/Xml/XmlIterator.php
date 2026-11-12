@@ -40,9 +40,11 @@ class XmlIterator extends FileIterator
             throw new ReadError($file);
         }
 
-        yield from $this->iterateStream($stream, $offset, $limit);
-
-        \fclose($stream);
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
+        }
     }
 
     /**
@@ -55,9 +57,11 @@ class XmlIterator extends FileIterator
         \fwrite($stream, $content);
         \rewind($stream);
 
-        yield from $this->iterateStream($stream, $offset, $limit);
-
-        \fclose($stream);
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
+        }
     }
 
     /**
@@ -79,9 +83,11 @@ class XmlIterator extends FileIterator
             \stream_copy_to_stream($stream, $buffer);
             \rewind($buffer);
 
-            yield from $this->iterateStream($buffer, $offset, $limit);
-
-            \fclose($buffer);
+            try {
+                yield from $this->iterateStream($buffer, $offset, $limit);
+            } finally {
+                \fclose($buffer);
+            }
 
             return;
         }
@@ -96,9 +102,11 @@ class XmlIterator extends FileIterator
         // Read from the stream itself (not its URI) so appended stream filters are applied
         $reader = \XMLReader::fromStream($stream);
 
-        yield from $this->readXml($reader, $offset, $limit);
-
-        $reader->close();
+        try {
+            yield from $this->readXml($reader, $offset, $limit);
+        } finally {
+            $reader->close();
+        }
     }
 
     protected function readXml(\XMLReader $reader, int $offset = 0, ?int $limit = null): \Generator
