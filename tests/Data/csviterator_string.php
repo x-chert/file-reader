@@ -330,8 +330,8 @@ return (function (): Generator {
                 headerBehavior: HeaderBehavior::NestedHeader,
             ),
             'charsetOptions' => new CharsetOptions(),
-            'data' => "id;a.b;a.c\n1;x",
-            'expected' => [['id' => '1', 'a' => ['b' => 'x']]],
+            'data' => "id;a.b;a.c;d\n1;x",
+            'expected' => [['id' => '1', 'a' => ['b' => 'x', 'c' => ''], 'd' => '']],
             'offset' => null,
             'limit' => null,
             'expectedException' => null

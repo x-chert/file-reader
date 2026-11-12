@@ -197,7 +197,7 @@ class CsvIterator extends FileIterator
     protected function buildNested(array $header, array $data): array
     {
         $result = [];
-        $count = \min(\count($header), \count($data));
+        $count = \count($header);
 
         for ($i = 0; $i < $count; $i++) {
             $keys = \explode('.', (string)$header[$i]);
@@ -209,7 +209,7 @@ class CsvIterator extends FileIterator
                 $key = $key === '' ? $i : $key;
 
                 if ($index === $last) {
-                    $target[$key] = $data[$i];
+                    $target[$key] = $data[$i] ?? '';
                     break;
                 }
 
