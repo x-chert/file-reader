@@ -5,6 +5,14 @@ declare(strict_types=1);
 use Xchert\FileReader\Charset\CharsetOptions;
 
 return (function (): Generator {
+    $createNonSeekableStream = static function (string $file) {
+        [$reader, $writer] = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        fwrite($writer, file_get_contents($file));
+        fclose($writer);
+
+        return $reader;
+    };
+
     yield from [
         'NestedRead' => [
             'path' => ['inventory', 'products'],
@@ -135,6 +143,74 @@ return (function (): Generator {
             'limit' => null,
             'expectedException' => null
         ],
+        'NestedReadNonSeekableStream' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions('ISO-8859-1'),
+            'data' => $createNonSeekableStream(__DIR__.'/inventory_iso88591.xml'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gäming Maus',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanische Tastatür',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadISO88591SpacedDeclaration' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => fopen(__DIR__.'/inventory_iso88591_spaced_declaration.xml', 'r'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gäming Maus',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanische Tastatür',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
         'NestedReadISO88591WithoutDeclaration' => [
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions('ISO-8859-1'),
@@ -173,6 +249,40 @@ return (function (): Generator {
             'path' => ['inventory', 'products'],
             'charsetOptions' => new CharsetOptions(),
             'data' => fopen(__DIR__.'/inventory_utf8bom.xml', 'r'),
+            'expected' => [
+                [
+                    'id' => '101',
+                    'name' => 'Gaming Mouse',
+                    'price' => '49.99',
+                    'categories' => [
+                        'category' => [
+                            '56',
+                            '65'
+                        ]
+                    ]
+                ],
+                [
+                    'id' => '102',
+                    'name' => 'Mechanical keyboard',
+                    'price' => '119.99',
+                    'categories' => [
+                        'category' => '56'
+                    ]
+                ],
+                [
+                    'id' => '103',
+                    'name' => 'Monitor',
+                    'price' => '219.99'
+                ]
+            ],
+            'offset' => null,
+            'limit' => null,
+            'expectedException' => null
+        ],
+        'NestedReadUTF-16LE' => [
+            'path' => ['inventory', 'products'],
+            'charsetOptions' => new CharsetOptions(),
+            'data' => fopen(__DIR__.'/inventory_utf16le.xml', 'r'),
             'expected' => [
                 [
                     'id' => '101',

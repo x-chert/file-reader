@@ -85,6 +85,19 @@ class XmlIterator extends FileIterator
         $offset ??= 0;
         $this->validateOffsetLimit($offset, $limit);
 
+        // Encoding detection rewinds the stream, so non-seekable streams are buffered first
+        if (!\stream_get_meta_data($stream)['seekable']) {
+            $buffer = \fopen('php://temp', 'w+');
+            \stream_copy_to_stream($stream, $buffer);
+            \rewind($buffer);
+
+            yield from $this->iterateStream($buffer, $offset, $limit);
+
+            \fclose($buffer);
+
+            return;
+        }
+
         $hasEncoding = $this->hasEncoding($stream);
         \rewind($stream);
 
@@ -200,8 +213,10 @@ class XmlIterator extends FileIterator
 
         \rewind($stream);
 
-        $header = \str_replace('\x00', '', $header);
+        // Remove NUL bytes (UTF-16) and a leading byte order mark (UTF-8, UTF-16 BE/LE)
+        $header = \str_replace("\x00", '', $header);
+        $header = \preg_replace('/^(\xEF\xBB\xBF|\xFE\xFF|\xFF\xFE)/', '', $header);
 
-        return (bool)\preg_match('/^<\?xml\s+[^>]*encoding=/i', $header);
+        return (bool)\preg_match('/^<\?xml\s[^>]*\bencoding\s*=/i', $header);
     }
 }
