@@ -35,9 +35,11 @@ class CsvIterator extends FileIterator
             throw new ReadError($file);
         }
 
-        yield from $this->iterateStream($stream, $offset, $limit);
-
-        \fclose($stream);
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
+        }
     }
 
     public function iterateString(string $content, ?int $offset = null, ?int $limit = null): \Generator
@@ -46,9 +48,11 @@ class CsvIterator extends FileIterator
         \fwrite($stream, $content);
         \rewind($stream);
 
-        yield from $this->iterateStream($stream, $offset, $limit);
-
-        \fclose($stream);
+        try {
+            yield from $this->iterateStream($stream, $offset, $limit);
+        } finally {
+            \fclose($stream);
+        }
     }
 
     /** @var resource $stream */
